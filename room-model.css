@@ -1,0 +1,100 @@
+/* Pure CSS 3D geometry. Keep every 3D ancestor unflattened: no filter,
+   opacity animation, paint containment or clipped overflow on these wrappers. */
+.room-model { position: absolute; inset: 0; --model-unit: 1px; --model-yaw: 0deg; --model-tilt: 0deg; pointer-events: auto; }
+.room-model, .model-camera, .model-tilt, .model-world, .model-group, .model-cuboid { transform-style: preserve-3d; }
+.room-model * { pointer-events: none; box-sizing: border-box; }
+.has-room-model > .lamp-glow { display: none; }
+.model-camera { position: absolute; left: 50%; top: 61%; width: 0; height: 0; }
+.model-tilt { position: absolute; width: 0; height: 0; transform: rotateX(calc(58deg + var(--model-tilt))); }
+.model-world { position: absolute; width: calc(400 * var(--model-unit)); height: calc(400 * var(--model-unit)); left: calc(-200 * var(--model-unit)); top: calc(-200 * var(--model-unit)); transform: rotateZ(calc(-45deg + var(--model-yaw))); transform-origin: 50% 50%; }
+.model-group { position: absolute; left: calc(var(--gx) * var(--model-unit)); top: calc(var(--gy) * var(--model-unit)); width: 0; height: 0; transform-origin: 0 0; }
+.model-cuboid { position: absolute; left: 0; top: 0; width: 0; height: 0; transform: translate3d(calc(var(--cx) * var(--model-unit)), calc(var(--cy) * var(--model-unit)), calc(var(--cz) * var(--model-unit))) rotateZ(var(--rz)) rotateY(var(--ry)) rotateX(var(--rx)); }
+.model-face { position: absolute; display: block; left: 0; top: 0; backface-visibility: hidden; background: var(--face-front); }
+.face-top, .face-bottom { width: calc(var(--w) * var(--model-unit)); height: calc(var(--d) * var(--model-unit)); margin-left: calc(var(--w) * var(--model-unit) / -2); margin-top: calc(var(--d) * var(--model-unit) / -2); }
+.face-top { transform: translateZ(calc(var(--h) * var(--model-unit) / 2)); background: var(--face-top); }
+.face-bottom { transform: translateZ(calc(var(--h) * var(--model-unit) / -2)) rotateX(180deg); background: var(--face-dark); }
+.face-front, .face-back { width: calc(var(--w) * var(--model-unit)); height: calc(var(--h) * var(--model-unit)); margin-left: calc(var(--w) * var(--model-unit) / -2); margin-top: calc(var(--h) * var(--model-unit) / -2); }
+.face-front { transform: translateY(calc(var(--d) * var(--model-unit) / 2)) rotateX(-90deg); }
+.face-back { transform: translateY(calc(var(--d) * var(--model-unit) / -2)) rotateX(90deg); background: var(--face-dark); }
+.face-left, .face-right { width: calc(var(--d) * var(--model-unit)); height: calc(var(--h) * var(--model-unit)); margin-left: calc(var(--d) * var(--model-unit) / -2); margin-top: calc(var(--h) * var(--model-unit) / -2); }
+/* Turn the side rectangle within its own plane so depth runs along Y,
+   and height runs along Z, exactly as on the front/back faces. */
+.face-left { transform: translateX(calc(var(--w) * var(--model-unit) / -2)) rotateY(-90deg) rotateZ(90deg); }
+.face-right { transform: translateX(calc(var(--w) * var(--model-unit) / 2)) rotateY(90deg) rotateZ(-90deg); background: var(--face-dark); }
+.model-panel { position: absolute; left: 0; top: 0; width: calc(var(--pw) * var(--model-unit)); height: calc(var(--ph) * var(--model-unit)); margin-left: calc(var(--pw) * var(--model-unit) / -2); margin-top: calc(var(--ph) * var(--model-unit) / -2); transform: translate3d(calc(var(--cx) * var(--model-unit)), calc(var(--cy) * var(--model-unit)), calc(var(--cz) * var(--model-unit))) rotateZ(var(--rz)) rotateX(var(--rx)); backface-visibility: hidden; }
+.model-panel svg { display: block; width: 100%; height: 100%; }
+.model-anchor { position: absolute; left: 0; top: 0; width: 1px; height: 1px; transform: translate3d(calc(var(--cx) * var(--model-unit)), calc(var(--cy) * var(--model-unit)), calc(var(--cz) * var(--model-unit))); }
+.model-floor .face-top { background: repeating-linear-gradient(0deg, transparent 0, transparent calc(29 * var(--model-unit)), #322d284a calc(29 * var(--model-unit)), #322d284a calc(30 * var(--model-unit))), linear-gradient(100deg, #6a5542, #806c56 52%, #5e4d3c); }
+.model-shadow { border-radius: 38%; background: #080d1330; box-shadow: 0 0 calc(14 * var(--model-unit)) calc(4 * var(--model-unit)) #080d132e; }
+.model-rug { border: calc(3 * var(--model-unit)) solid #393e43; background: repeating-linear-gradient(90deg, #3e464e 0, #3e464e calc(4 * var(--model-unit)), #434b54 calc(4 * var(--model-unit)), #434b54 calc(5 * var(--model-unit))); }
+.model-blanket { background: repeating-linear-gradient(90deg, #283c56 0, #283c56 calc(23 * var(--model-unit)), #334b65 calc(23 * var(--model-unit)), #334b65 calc(25 * var(--model-unit))); border-bottom: calc(7 * var(--model-unit)) solid #3a526e; }
+.model-blue-led .face-front, .model-blue-led .face-top { box-shadow: 0 0 calc(7 * var(--model-unit)) #66badd8c; }
+.model-screen { border: calc(3 * var(--model-unit)) solid #101722; background: #15212f; overflow: hidden; }
+.screen-movie { display: block; width: 100%; height: 100%; }
+.screen-movie .movie-cube, .screen-movie .movie-room, .screen-movie .movie-piece { transform-box: fill-box; transform-origin: center; }
+.movie-cube { animation: movie-cube 9s ease-in-out infinite; }
+.movie-hello { animation: movie-greeting 9s ease-in-out infinite; }
+.movie-room { animation: movie-room 9s ease-in-out infinite; }
+.movie-piece { animation: movie-piece 9s ease-in-out infinite; }
+.movie-shelf { animation-delay: .14s; }
+.movie-desk { animation-delay: .28s; }
+.movie-chair { animation-delay: .42s; }
+.movie-art { animation-delay: .56s; }
+.movie-title { animation: movie-title 9s ease-in-out infinite; }
+@keyframes movie-cube { 0% { opacity: 0; transform: scale(.1) rotate(-180deg); } 8%, 17% { opacity: 1; transform: scale(1) rotate(0); } 23%, 100% { opacity: 0; transform: scale(.1) rotate(180deg); } }
+@keyframes movie-greeting { 0%, 3% { opacity: 0; } 9%, 17% { opacity: 1; } 23%, 100% { opacity: 0; } }
+@keyframes movie-room { 0%, 20% { opacity: 0; transform: scale(.15) translateY(10px); } 32%, 85% { opacity: 1; transform: scale(1) translateY(0); } 95%, 100% { opacity: 0; transform: scale(.7) translateY(0); } }
+@keyframes movie-piece { 0%, 28% { opacity: 0; transform: scale(.1) rotate(-360deg); } 43%, 90% { opacity: 1; transform: scale(1) rotate(0); } 96%, 100% { opacity: 0; transform: scale(1) rotate(0); } }
+@keyframes movie-title { 0%, 44% { opacity: 0; } 53%, 85% { opacity: 1; } 94%, 100% { opacity: 0; } }
+.wall-art { overflow: hidden; }
+.wall-art .art-orbit { transform-box: fill-box; transform-origin: center; animation: art-orbit 16s linear infinite; }
+.wall-art .art-float { animation: art-float 8s ease-in-out infinite; }
+.wall-art .art-drift { transform-box: fill-box; transform-origin: center; animation: art-drift 10s ease-in-out infinite; }
+@keyframes art-orbit { to { transform: rotate(360deg); } }
+@keyframes art-float { 50% { transform: translateY(-2px); } }
+@keyframes art-drift { 50% { transform: translateY(2px) rotate(8deg); } }
+.room-model:not(.screen-active) .screen-movie *, .room-model:not(.art-active) .wall-art * { animation-play-state: paused; }
+.model-duvet .face-top { border-radius: calc(6 * var(--model-unit)); background: repeating-linear-gradient(90deg, transparent 0, transparent calc(24 * var(--model-unit)), #92abc425 calc(24 * var(--model-unit)), #92abc425 calc(25 * var(--model-unit))), linear-gradient(110deg, #445f7b, #607c94 55%, #354f6d); }
+.model-duvet .face-front, .duvet-drape .face-front { background: repeating-linear-gradient(90deg, #3b5875 0, #3b5875 calc(24 * var(--model-unit)), #4d6b87 calc(24 * var(--model-unit)), #4d6b87 calc(25 * var(--model-unit))); }
+.duvet-fold .face-top { background: linear-gradient(0deg, #8097aa, #5c768f); }
+.screen-orbit { position: absolute; left: 54%; top: 15%; width: 28%; height: 59%; border: calc(1.4 * var(--model-unit)) solid #b9e6eb85; border-radius: 50%; transform: rotate(-28deg); }
+.screen-line { position: absolute; left: 9%; top: 57%; width: 22%; height: 3%; background: #b4d4df; }
+.screen-line.line-two { top: 68%; width: 29%; background: #739daf; }
+.screen-line.line-three { top: 79%; width: 18%; background: #527b90; }
+.model-keyboard .face-top { border: calc(2 * var(--model-unit)) solid #202834; background: repeating-linear-gradient(90deg, transparent 0, transparent calc(4 * var(--model-unit)), #8196a24d calc(4 * var(--model-unit)), #8196a24d calc(4.7 * var(--model-unit))), repeating-linear-gradient(0deg, #273240 0, #273240 calc(4 * var(--model-unit)), #809dac5c calc(4 * var(--model-unit)), #809dac5c calc(4.5 * var(--model-unit))); }
+.model-mouse .face-top { border-radius: 45% 45% 35% 35%; background: linear-gradient(90deg, #19232e, #374351 50%, #202b36); }
+.model-window { border: calc(7 * var(--model-unit)) solid #1b252f; box-shadow: 0 0 calc(12 * var(--model-unit)) #609dca2d; background: #183148; }
+.model-window::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 48%, #293440 48%, #293440 52%, transparent 52%), linear-gradient(0deg, transparent 47%, #293440 47%, #293440 51%, transparent 51%); }
+.model-picture { border: calc(5 * var(--model-unit)) solid #887761; background: #536c7e; }
+.model-pinboard { border: calc(4 * var(--model-unit)) solid #655242; background: #978168; }
+.board-note { position: absolute; width: 30%; height: 35%; background: #c9d0bf; border-top: calc(2 * var(--model-unit)) solid #414c58; }
+.note-one { left: 9%; top: 12%; transform: rotate(-8deg); }
+.note-two { right: 10%; top: 19%; background: #c9ae89; transform: rotate(7deg); }
+.note-three { left: 33%; bottom: 8%; background: #93aabb; transform: rotate(-3deg); }
+.board-pin { position: absolute; width: 6%; height: 6%; left: 46%; top: 48%; border-radius: 50%; background: #4c657e; }
+.model-lampshade .face-bottom { background: #f1d69a; box-shadow: 0 0 calc(28 * var(--model-unit)) #ffd59b50; }
+.model-warm-light { background: #f8db9c; box-shadow: 0 0 calc(20 * var(--model-unit)) #eabb7240; }
+.table-round-top { border-radius: 50%; background: radial-gradient(ellipse at 35% 40%, #8c7055, #68523d); border: calc(1.3 * var(--model-unit)) solid #92795c; }
+.table-round-edge { background: #6f543e; }
+.controller-button { border-radius: 50%; }
+.model-notebook .face-top { border-left: calc(2 * var(--model-unit)) solid #536777; background: linear-gradient(0deg, #99aab8, #7e95a7); }
+.model-map { border: calc(1 * var(--model-unit)) solid #b8b092; }
+.hide-left-wall .model-wall-left, .hide-left-wall .wall-left-object, .hide-right-wall .model-wall-right, .hide-right-wall .wall-right-object { visibility: hidden; }
+/* Root calls replay() at the start of body.intro-finishing. No looping and no
+   group opacity: a translucent 3D ancestor would flatten its children. */
+.intro-running .room-model .model-group:not(.is-static) { transform: scale(.001); }
+.room-model.is-building .model-group:not(.is-static) { animation: room-piece-build 650ms cubic-bezier(.22, .8, .24, 1) var(--piece-delay) both; }
+@keyframes room-piece-build {
+  from { transform: translateZ(calc(45 * var(--model-unit))) rotateZ(-360deg) scale(.001); }
+  to { transform: translateZ(0) rotateZ(0deg) scale(1); }
+}
+.motion-paused .room-model .model-group { animation: none !important; transform: none !important; }
+.motion-paused .screen-movie *, .motion-paused .wall-art * { animation: none !important; }
+.motion-paused .movie-cube, .motion-paused .movie-hello { opacity: 0; }
+.motion-paused .movie-room, .motion-paused .movie-piece, .motion-paused .movie-title { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .room-model .model-group { animation: none !important; transform: none !important; }
+  .screen-movie *, .wall-art * { animation: none !important; }
+  .movie-cube, .movie-hello { opacity: 0; }
+  .movie-room, .movie-piece, .movie-title { opacity: 1; transform: none; }
+}
