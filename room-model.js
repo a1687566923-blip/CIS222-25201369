@@ -6,7 +6,9 @@
   function buildRoom() {
     var scene = document.getElementById('room-scene');
     if (!scene) { return; }
-    if (window.CSS && typeof window.CSS.supports === 'function' && !window.CSS.supports('transform-style', 'preserve-3d')) { return; }
+    if (!window.CSS || typeof window.CSS.supports !== 'function' ||
+        !(window.CSS.supports('transform-style', 'preserve-3d') || window.CSS.supports('-webkit-transform-style', 'preserve-3d')) ||
+        !window.CSS.supports('width', 'var(--model-unit)')) { return; }
     var fallback = scene.querySelector('.room-image');
     var model;
     try {
@@ -19,8 +21,10 @@
       var lastZoom = 0;
       var viewYaw = 0;
       var viewTilt = 0;
-      var renderDensity = 3;
+      var compactModel = (window.innerWidth || 1024) <= 760;
+      var renderDensity = compactModel ? 1.75 : 3;
       var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      var bedsideLight = { x: 42, y: -65, z: 92 };
 
       function element(tag, className, parent) {
         var item = document.createElement(tag);
@@ -33,8 +37,28 @@
           item.style.setProperty('--' + key, String(values[key]));
         });
       }
-      function colors(front, top, dark) {
-        return { front: front, top: top || front, dark: dark || front };
+      function tint(color, light, amount) {
+        var first = parseInt(color.slice(1), 16), second = parseInt(light.slice(1), 16);
+        var result = '#';
+        [16, 8, 0].forEach(function (shift) {
+          var channel = Math.round(((first >> shift) & 255) * (1 - amount) + ((second >> shift) & 255) * amount);
+          result += ('0' + channel.toString(16)).slice(-2);
+        });
+        return result;
+      }
+      function colors(front, top, dark, daytime, nighttime) {
+        var original = [front, top || front, dark || front];
+        // Light the materials themselves. A filter on a CSS 3D ancestor would
+        // flatten the room and turn the theme toggle into a flat image effect.
+        return {
+          day: daytime || original.map(function (color) { return tint(color, '#fff5df', 0.16); }),
+          night: nighttime || original.map(function (color) { return tint(tint(color, '#41507d', 0.28), '#141c38', 0.18); })
+        };
+      }
+      function lamplight(color, x, y, z) {
+        var distance = Math.sqrt(Math.pow(x - bedsideLight.x, 2) + Math.pow(y - bedsideLight.y, 2) + Math.pow(z - bedsideLight.z, 2));
+        var falloff = Math.max(0, 1 - distance / 235);
+        return tint(color, '#ffedc1', 0.58 * falloff * falloff);
       }
 
       // A small vector movie on the monitor: greeting cube, room assembly,
@@ -54,6 +78,7 @@
       }
 
       model = element('div', 'room-model');
+      if (compactModel) { model.classList.add('model-compact'); }
       model.setAttribute('aria-hidden', 'true');
       variables(model, { 'model-unit': '1px', 'model-yaw': '0deg', 'model-tilt': '0deg' });
       var camera = element('div', 'model-camera', model);
@@ -64,24 +89,52 @@
       // Each independent group rotates around its own furniture position.
       function group(name, x, y, isStatic, extraClass) {
         var item = element('div', 'model-group group group-' + name + (isStatic ? ' is-static' : '') + (extraClass ? ' ' + extraClass : ''), world);
-        variables(item, { gx: x + 200, gy: y + 200, 'piece-delay': (pieceNumber * 70) + 'ms' });
+        variables(item, { gx: x + 200, gy: y + 200, 'piece-delay': (pieceNumber * (compactModel ? 80 : 70)) + 'ms' });
         item.roomOrigin = { x: x, y: y };
         if (!isStatic) { pieceNumber += 1; }
         return item;
       }
 
       // A box has six real faces: front/back/left/right/top/bottom.
+      function facesAway(side, rotation) {
+        var normals = { front: [0, 1, 0], back: [0, -1, 0], left: [-1, 0, 0], right: [1, 0, 0], top: [0, 0, 1], bottom: [0, 0, -1] };
+        var normal = normals[side], x = normal[0], y = normal[1], z = normal[2];
+        var rx = ((rotation && rotation.x) || 0) * Math.PI / 180;
+        var ry = ((rotation && rotation.y) || 0) * Math.PI / 180;
+        var rz = (((rotation && rotation.z) || 0) - 45) * Math.PI / 180;
+        var yAfterX = y * Math.cos(rx) - z * Math.sin(rx);
+        var zAfterX = y * Math.sin(rx) + z * Math.cos(rx);
+        var xAfterY = x * Math.cos(ry) + zAfterX * Math.sin(ry);
+        var zAfterY = -x * Math.sin(ry) + zAfterX * Math.cos(ry);
+        var yAfterZ = xAfterY * Math.sin(rz) + yAfterX * Math.cos(rz);
+        var depth = yAfterZ * Math.sin(58 * Math.PI / 180) + zAfterY * Math.cos(58 * Math.PI / 180);
+        // The margin also covers the full gentle mouse sway. Keep uncertain
+        // edge faces; only remove surfaces that always face away at rest.
+        return depth < -0.17;
+      }
       function box(parent, x, y, z, width, depth, height, palette, extraClass, rotation) {
         var item = element('div', 'model-cuboid' + (extraClass ? ' ' + extraClass : ''), parent);
+        var origin = parent.roomOrigin;
+        // Bake the small lamp's soft falloff into the night material once.
+        // Moving the camera or toggling the theme never recalculates lighting.
+        var nightFront = lamplight(palette.night[0], origin.x + x, origin.y + y + depth / 2, z + height / 2);
+        var nightTop = lamplight(palette.night[1], origin.x + x, origin.y + y, z + height);
+        var nightDark = lamplight(palette.night[2], origin.x + x + width / 2, origin.y + y, z + height / 2);
         variables(item, {
           cx: x, cy: y, cz: z + height / 2, w: width, d: depth, h: height,
           rx: ((rotation && rotation.x) || 0) + 'deg',
           ry: ((rotation && rotation.y) || 0) + 'deg',
           rz: ((rotation && rotation.z) || 0) + 'deg',
-          'face-front': palette.front, 'face-top': palette.top, 'face-dark': palette.dark
+          'day-front': palette.day[0], 'day-top': palette.day[1], 'day-dark': palette.day[2],
+          'night-front': nightFront, 'night-top': nightTop, 'night-dark': nightDark
         });
-        ['front', 'back', 'left', 'right', 'top', 'bottom'].forEach(function (side) {
-          element('span', 'model-face face-' + side, item);
+        // Phone cameras never tip under the floor. Furniture can still rotate
+        // fully around Z during its arrival, so keep all four upright faces.
+        var faces = compactModel ? (parent.classList.contains('is-static') ? ['front', 'left', 'top'] : ['front', 'back', 'left', 'right', 'top']) : ['front', 'back', 'left', 'right', 'top', 'bottom'];
+        if (compactModel && rotation && (rotation.x || rotation.y)) { faces.push('bottom'); }
+        faces.forEach(function (side) {
+          var face = element('span', 'model-face face-' + side, item);
+          if (facesAway(side, rotation)) { face.classList.add('rest-occluded'); }
         });
         return item;
       }
@@ -102,7 +155,7 @@
       }
       function roundTop(parent, radius, z, height) {
         panel(parent, 0, 0, z + height, radius * 2, radius * 2, 'table-round-top');
-        var sides = 16;
+        var sides = compactModel ? 12 : 16;
         var edge = 2 * radius * Math.sin(Math.PI / sides);
         for (var i = 0; i < sides; i += 1) {
           var angle = i * Math.PI * 2 / sides;
@@ -111,21 +164,23 @@
         }
       }
 
-      var wood = colors('#5a483a', '#75604c', '#3d3028');
-      var dark = colors('#222a33', '#35404c', '#131a21');
-      var white = colors('#dce1e4', '#f3f5f6', '#919da7');
-      var blue = colors('#22344b', '#344e6c', '#162334');
+      var wood = colors('#5a483a', '#75604c', '#3d3028', ['#85684e', '#aa8963', '#604b3b'], ['#373852', '#565470', '#262941']);
+      var dark = colors('#222a33', '#35404c', '#131a21', ['#28313b', '#424c56', '#171e27'], ['#171c2c', '#2a3045', '#111525']);
+      var white = colors('#dce1e4', '#f3f5f6', '#919da7', ['#ece9df', '#fffdf4', '#b6bbc1'], ['#707e9b', '#a2b0c9', '#465872']);
+      var blue = colors('#22344b', '#344e6c', '#162334', ['#496278', '#7c93a5', '#344a62'], ['#333657', '#515b84', '#222641']);
 
       // The room shell stays still while the individual furniture arrives.
+      panel(world, 226, 220, -15, 465, 452, 'model-ground-shadow');
       var floor = group('floor', 0, 0, true);
       box(floor, 0, 0, -14, 400, 400, 14, wood, 'model-floor');
       var wallLeft = group('wall-left', 0, -199, true, 'model-wall-left');
-      box(wallLeft, 0, 0, 0, 405, 10, 230, colors('#2c333d', '#49515c', '#1a2028'));
+      box(wallLeft, 0, 0, 0, 405, 10, 230, colors('#2c333d', '#49515c', '#1a2028', ['#d8d5ca', '#eee6d4', '#aeaca4'], ['#525f87', '#6f7bac', '#333e60']));
       var wallRight = group('wall-right', 199, 0, true, 'model-wall-right');
-      box(wallRight, 0, 0, 0, 10, 400, 230, colors('#323c49', '#4d5765', '#202833'));
+      box(wallRight, 0, 0, 0, 10, 400, 230, colors('#323c49', '#4d5765', '#202833', ['#cecec4', '#e5decd', '#a1a5a0'], ['#5f6a93', '#8992b7', '#3d486b']));
       box(wallLeft, 0, 7, 0, 398, 3, 8, dark);
       box(wallRight, -7, 0, 0, 3, 398, 8, dark);
       panel(floor, 38, 45, 1, 115, 133, 'model-rug');
+      panel(world, bedsideLight.x + 200, bedsideLight.y + 200, 0.6, 225, 245, 'model-lamp-pool');
 
       // A deep-blue bed with separate frame, pillow and folded blanket.
       var bed = group('bed', 130, 64);
@@ -133,7 +188,7 @@
       box(bed, 0, 0, 8, 104, 210, 28, wood);
       box(bed, 0, -102, 8, 108, 9, 72, dark);
       box(bed, 0, 0, 36, 100, 202, 16, blue);
-      box(bed, 0, -66, 52, 80, 39, 11, colors('#9caaba', '#bec7d1', '#6b7b8e'));
+      box(bed, 0, -66, 52, 80, 39, 11, white);
       // A thick duvet, a folded edge, and fabric hanging over the bed end.
       box(bed, 0, 26, 52, 101, 144, 9, blue, 'model-duvet');
       box(bed, 0, -39, 61, 100, 15, 3, colors('#57718a', '#6d879e', '#3d566f'), 'duvet-fold');
@@ -146,7 +201,7 @@
       box(desk, 0, 0, 84, 146, 68, 6, wood);
       [-61, 61].forEach(function (x) { [-25, 25].forEach(function (y) { box(desk, x, y, 0, 5, 5, 84, dark); }); });
       box(desk, 0, -27, 72, 130, 5, 8, dark);
-      box(desk, 0, 33, 86, 138, 1.4, 2.2, colors('#2c7daf', '#80d8ef', '#184660'), 'model-blue-led');
+      box(desk, 0, 33, 86, 138, 1.4, 2.2, dark, 'model-blue-led');
       var monitor = group('monitor', -85, -124);
       box(monitor, 0, 0, 90, 39, 24, 3, dark);
       box(monitor, 0, -4, 93, 5, 6, 14, dark);
@@ -162,8 +217,9 @@
       var headphones = group('headphones', -150, -130);
       box(headphones, 0, 0, 90, 23, 19, 2, dark);
       box(headphones, 0, 0, 92, 3, 3, 41, colors('#74808e'));
-      for (var band = 0; band < 7; band += 1) {
-        var bandAngle = -75 + band * 25;
+      var bandCount = compactModel ? 5 : 7;
+      for (var band = 0; band < bandCount; band += 1) {
+        var bandAngle = -75 + band * 150 / (bandCount - 1);
         var radians = bandAngle * Math.PI / 180;
         box(headphones, 15 * Math.sin(radians), 0, 119 + 15 * Math.cos(radians), 5, 7, 9, dark, '', { y: bandAngle });
       }
@@ -193,9 +249,10 @@
       [0, 51, 103, 153, 194].forEach(function (z) { box(bookcase, 0, 0, z, 106, 40, 5, wood); });
       var bookColors = ['#748ba2', '#b2ad95', '#67567b', '#2e536d', '#8a5d58', '#c4ab7c'];
       [56, 108, 158].forEach(function (z, shelf) {
-        for (var book = 0; book < 8; book += 1) {
+        var volumes = compactModel ? 5 : 8;
+        for (var book = 0; book < volumes; book += 1) {
           var color = bookColors[(book + shelf) % bookColors.length];
-          box(bookcase, -38 + book * 10, 3, z, 7 + book % 3, 23, 25 + (book * 7 + shelf * 3) % 16, colors(color, color, '#303641'));
+          box(bookcase, -38 + book * (compactModel ? 17 : 10), 3, z, (compactModel ? 12 : 7) + book % 3, 23, 25 + (book * 7 + shelf * 3) % 16, colors(color, color, '#303641'));
         }
       });
       anchor(bookcase, 'education', -22, 16, 171);
@@ -203,7 +260,7 @@
       // Native SVG Hong Kong night skyline in a framed window on the left wall.
       var windowGroup = group('window', -45, -192, false, 'wall-left-object');
       var windowPanel = panel(windowGroup, 0, 0, 162, 125, 105, 'model-window', 0, -90);
-      windowPanel.innerHTML = '<svg viewBox="0 0 125 105" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="room-sky" x2="0" y2="1"><stop stop-color="#102034"/><stop offset="1" stop-color="#34526b"/></linearGradient><pattern id="room-windows" width="8" height="10" patternUnits="userSpaceOnUse"><rect width="2" height="4" x="3" y="3" fill="#dbc895"/></pattern></defs><rect width="125" height="105" fill="url(#room-sky)"/><circle cx="97" cy="19" r="7" fill="#d9e3e8"/><path d="M0 71L13 62L22 67L39 49L53 58L69 43L84 60L103 46L125 61V105H0Z" fill="#20394b"/><path d="M1 104V66H17V104M21 104V51H38V104M43 104V70H56V104M63 104V37H81V104M87 104V62H103V104M108 104V49H125V104" fill="#121e2c"/><path d="M2 101V68H16V101M23 101V53H36V101M45 101V73H54V101M65 101V40H79V101M89 101V65H101V101M110 101V52H123V101" fill="url(#room-windows)"/><path d="M72 37V27M65 41H79" stroke="#97c2d9" stroke-width="2"/></svg>';
+      windowPanel.innerHTML = '<svg viewBox="0 0 125 105" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="room-sky" x2="0" y2="1"><stop class="sky-top" stop-color="#b6cdd9"/><stop class="sky-bottom" offset="1" stop-color="#e6d7bb"/></linearGradient><pattern id="room-windows" width="8" height="10" patternUnits="userSpaceOnUse"><rect class="city-light" width="2" height="4" x="3" y="3" fill="#dbc895"/></pattern></defs><rect width="125" height="105" fill="url(#room-sky)"/><circle class="sky-orb" cx="97" cy="19" r="7" fill="#f2d49b"/><path class="city-hills" d="M0 71L13 62L22 67L39 49L53 58L69 43L84 60L103 46L125 61V105H0Z" fill="#718d99"/><path class="city-buildings" d="M1 104V66H17V104M21 104V51H38V104M43 104V70H56V104M63 104V37H81V104M87 104V62H103V104M108 104V49H125V104" fill="#526d83"/><path d="M2 101V68H16V101M23 101V53H36V101M45 101V73H54V101M65 101V40H79V101M89 101V65H101V101M110 101V52H123V101" fill="url(#room-windows)"/><path d="M72 37V27M65 41H79" stroke="#97c2d9" stroke-width="2"/></svg>';
       var picture = group('picture', 193, -4, false, 'wall-right-object');
       var picturePanel = panel(picture, 0, 0, 158, 73, 60, 'model-picture', 90, -90);
       picturePanel.classList.add('wall-art');
@@ -216,12 +273,31 @@
       var abstractPanel = panel(movingArt, 0, 0, 91, 62, 42, 'model-picture wall-art art-teal', 90, -90);
       abstractPanel.innerHTML = '<svg viewBox="0 0 62 42" xmlns="http://www.w3.org/2000/svg"><rect width="62" height="42" fill="#294f59"/><g class="art-drift"><path d="M31 6L49 33H13Z" fill="#c4d5d4"/><circle cx="10" cy="9" r="3" fill="#baa476"/><circle cx="52" cy="32" r="2" fill="#baa476"/></g></svg>';
 
-      // Warm lamp, gym bag and a small table in the foreground.
-      var lamp = group('lamp', 22, -113);
-      box(lamp, 0, 0, 0, 27, 27, 3, dark);
-      box(lamp, 0, 0, 3, 3, 3, 140, colors('#b79e73'));
-      box(lamp, 0, 0, 133, 34, 30, 23, colors('#cfae78', '#e8d0a0', '#a17b49'), 'model-lampshade');
-      panel(lamp, 0, 0, 130, 25, 22, 'model-warm-light');
+      // One little bedside lamp. Its table and lamp arrive as one furniture
+      // group; the shade is a tapered cloth cone, rather than a tall light box.
+      var lamp = group('lamp', bedsideLight.x, bedsideLight.y, false, 'model-bedside-lamp');
+      shadow(bedsideLight.x, bedsideLight.y, 60, 62);
+      roundTop(lamp, 25, 58, 4);
+      [30, 150, 270].forEach(function (angle) {
+        var radians = angle * Math.PI / 180;
+        box(lamp, 18 * Math.cos(radians), 18 * Math.sin(radians), 0, 4, 4, 58, wood, 'nightstand-leg');
+      });
+      box(lamp, 0, 0, 62, 15, 15, 3, dark, 'model-lamp-base');
+      box(lamp, 0, 0, 65, 3, 3, 21, colors('#93816a'), 'model-lamp-stem');
+      var shadeSides = compactModel ? 8 : 12;
+      var bottomRadius = 16, topRadius = 9, shadeHeight = 19;
+      var slope = (bottomRadius - topRadius) * Math.cos(Math.PI / shadeSides);
+      var slant = Math.sqrt(shadeHeight * shadeHeight + slope * slope);
+      var shadePitch = -90 + Math.atan(slope / shadeHeight) * 180 / Math.PI;
+      var shadeRadius = (bottomRadius + topRadius) / 2 * Math.cos(Math.PI / shadeSides);
+      var shadeWidth = 2 * bottomRadius * Math.sin(Math.PI / shadeSides);
+      for (var shadeSide = 0; shadeSide < shadeSides; shadeSide += 1) {
+        var shadeAngle = shadeSide * Math.PI * 2 / shadeSides;
+        panel(lamp, shadeRadius * Math.cos(shadeAngle), shadeRadius * Math.sin(shadeAngle), 92.5, shadeWidth + 0.25, slant, 'model-lampshade', shadeSide * 360 / shadeSides - 90, shadePitch);
+      }
+      panel(lamp, 0, 0, 102, 18, 18, 'model-lamp-cap');
+      panel(lamp, 0, 0, 82.8, 31, 31, 'model-warm-light');
+      panel(lamp, 0, 0, 92, 62, 62, 'model-lamp-halo', 45, -58);
       var bag = group('gymbag', -168, -81);
       shadow(-168, -81, 59, 35);
       box(bag, 0, 0, 2, 50, 30, 25, colors('#283f55', '#3c5870', '#172838'), 'model-bag');
@@ -257,11 +333,18 @@
         var width = Number(baseWidth) || scene.clientWidth || scene.getBoundingClientRect().width || 640;
         zoom = Number(zoom) || 1;
         var resized = Math.abs(width - lastWidth) >= 0.01;
-        if (resized) {
+        // Retina and Windows display scaling multiply prepared surface pixels.
+        // Bound the largest face texture, rather than allocating 3x geometry
+        // at every pixel ratio. Plain vector surfaces retain the same shape.
+        var ratio = Math.max(1, Number(window.devicePixelRatio) || 1);
+        var density = Math.max(0.75, Math.min(compactModel ? 1.75 : 3, (compactModel ? 1408 : 2048) / (width * 0.64 * ratio)));
+        var densityChanged = Math.abs(density - renderDensity) >= 0.0001;
+        renderDensity = density;
+        if (resized || densityChanged) {
           lastWidth = width;
           model.style.setProperty('--model-unit', (width * renderDensity / 640).toFixed(5) + 'px');
         }
-        if (resized || Math.abs(zoom - lastZoom) >= 0.0001) {
+        if (resized || densityChanged || Math.abs(zoom - lastZoom) >= 0.0001) {
           lastZoom = zoom;
           // The camera is at 61% of the square. Keep its offset from the
           // square centre proportional to zoom, without resizing its parent.
@@ -320,7 +403,9 @@
       window.roomModel = { setView: setView, replay: replay, reset: reset, layout: layout, anchors: function () { return anchors; }, projectAnchors: projectAnchors, setChapter: setChapter };
       if (fallback) { fallback.hidden = true; }
       // room-tour.js supplies the fixed base width on window resize.
-      reduceMotion.addEventListener('change', function () { if (reduceMotion.matches) { reset(); } });
+      function onMotionChange() { if (reduceMotion.matches) { reset(); } }
+      if (reduceMotion.addEventListener) { reduceMotion.addEventListener('change', onMotionChange); }
+      else if (reduceMotion.addListener) { reduceMotion.addListener(onMotionChange); }
     } catch (error) {
       // A failed enhancement never removes the original room image or page links.
       if (model && model.parentNode) { model.parentNode.removeChild(model); }

@@ -11,7 +11,7 @@
     (function () {
       var entries = window.performance && window.performance.getEntriesByType ? window.performance.getEntriesByType('navigation') : [];
       var reload = entries[0] ? entries[0].type === 'reload' : !!(window.performance && window.performance.navigation && window.performance.navigation.type === 1);
-      var startup = window.roomStartup = { fromStart: reload || !window.location.hash };
+      var startup = window.roomStartup = { fromStart: reload || !window.location.hash, ready: false };
       try {
         window.history.scrollRestoration = 'manual';
         if (startup.fromStart && window.location.hash) {
@@ -23,8 +23,10 @@
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         // If enhancement fails, reveal the ordinary HTML rather than trapping it.
         startup.guardTimer = window.setTimeout(function () {
-          if (!document.documentElement.classList.contains('room-booting')) { return; }
+          if (startup.ready) { return; }
           document.documentElement.classList.remove('room-booting', 'room-opening');
+          document.body.classList.remove('intro-running', 'intro-finishing');
+          document.querySelectorAll('[inert]').forEach(function (item) { item.removeAttribute('inert'); });
           var screen = document.getElementById('intro-screen');
           if (screen) { screen.hidden = true; }
         }, 8000);
@@ -32,12 +34,12 @@
     }());
   </script>
   <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="room-tour.css">
-  <link rel="stylesheet" href="room-model.css">
-  <script src="script.js" defer></script>
-  <script src="room-model.js" defer></script>
-  <script src="room-tour.js" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261015-compat1">
+  <link rel="stylesheet" href="room-tour.css?v=20261015-compat1">
+  <link rel="stylesheet" href="room-model.css?v=20261015-compat1">
+  <script src="script.js?v=20261015-compat1" defer></script>
+  <script src="room-model.js?v=20261015-compat1" defer></script>
+  <script src="room-tour.js?v=20261015-compat1" defer></script>
 </head>
 <body class="night room-home">
 <div class="intro-screen" id="intro-screen" data-phase="loading" role="dialog" aria-modal="true" aria-label="Welcome to Kwok Ho’s room" hidden>
@@ -81,6 +83,7 @@
     </div>
     <div class="tour-panel-layer" aria-hidden="true"><div class="tour-panel-mask" id="tour-panel-mask"></div></div>
     <div class="tour-interface">
+      <div class="tour-reading-window"></div>
       <div class="tour-status"><span class="tour-status-label">ROOM JOURNAL</span><span id="tour-current">01</span><span class="tour-status-divider">/ 07</span><span id="tour-name">The room</span></div>
         <p class="room-message" id="room-message" aria-live="polite">Move your mouse for a gentle sway · Scroll or click an object to explore</p>
         <div class="room-controls" role="group" aria-label="Room display settings">

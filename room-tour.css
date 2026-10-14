@@ -1,8 +1,8 @@
 /* Homepage: a centred room, then alternating text panels and close-ups.
    This stage size is also used by the camera in room-tour.js. */
 html { overflow-x: clip; }
-.room-home { --scene-paper: #e2e5e6; --panel-paper: #d9dddf; --chapter-paper: #a3b8c8; background: var(--scene-paper); }
-.room-home.night { --scene-paper: #202735; --panel-paper: #262e3d; --chapter-paper: #3a5068; }
+.room-home { --scene-paper: #fbf4e1; --panel-paper: #fcf6e7; --chapter-paper: #adcbd0; --paper: #fbf4e1; --surface: #fffaf0; --ink: #343c40; --muted: #707a7b; --line: #d8d5c680; --accent: #4c737e; background: var(--scene-paper); }
+.room-home.night { --scene-paper: #5b6ead; --panel-paper: #4e608f; --chapter-paper: #6478b0; --paper: #53689c; --surface: #6276ad; --ink: #fff4df; --muted: #e0e4ef; --line: #dedfec45; --accent: #d1e5e8; }
 
 /* Every page remains reachable from the compact Menu. */
 .room-home .scene-header { position: fixed; inset: 0 0 auto; z-index: 50; width: 100%; min-height: 0; padding: 25px 32px; border: 0; gap: 12px; pointer-events: none; }
@@ -18,15 +18,16 @@ html { overflow-x: clip; }
 .scene-header .site-nav a { font-size: 13px; padding: 9px 0; }
 
 .room-tour { position: relative; width: 100%; margin: 0; }
-.tour-view { position: sticky; top: 0; height: 100vh; height: 100svh; pointer-events: none; }
+.tour-view { position: -webkit-sticky; position: sticky; top: 0; height: 100vh; height: 100svh; pointer-events: none; }
 .tour-panel-layer { position: sticky; top: 0; height: 100vh; height: 100svh; margin-top: -100vh; margin-top: -100svh; z-index: 1; pointer-events: none; }
 .tour-panel-mask { position: absolute; inset: 0 auto 0 0; width: calc(50% + 1px); background: var(--panel-paper); visibility: hidden; pointer-events: none; }
 .room-tour[data-panel-side='left'] .tour-panel-mask { visibility: visible; pointer-events: auto; }
 .room-tour[data-panel-side='right'] .tour-panel-mask { left: auto; right: 0; visibility: visible; pointer-events: auto; }
-.tour-interface { position: sticky; top: 0; height: 100vh; height: 100svh; margin-top: -100vh; margin-top: -100svh; z-index: 4; pointer-events: none; }
+.tour-interface { position: -webkit-sticky; position: sticky; top: 0; height: 100vh; height: 100svh; margin-top: -100vh; margin-top: -100svh; z-index: 4; pointer-events: none; }
+.tour-reading-window { display: none; }
 /* Clip inside the sticky view, never on its scrolling parent. */
 .scene-window { position: absolute; inset: 0; overflow: hidden; }
-.tour-view .room-stage { position: absolute; left: 50%; top: 49%; right: auto; transform: translate(-50%, -50%); width: min(68vh, 64vw, 900px); width: min(68svh, 64vw, 900px); aspect-ratio: 1; margin: 0; pointer-events: none; }
+.tour-view .room-stage { position: absolute; left: 50%; top: 49%; right: auto; transform: translate(-50%, -50%); width: min(68vh, 64vw, 900px); width: min(68svh, 64vw, 900px); height: min(68vh, 64vw, 900px); height: min(68svh, 64vw, 900px); aspect-ratio: 1; margin: 0; pointer-events: none; }
 .chapter-wipe { position: absolute; left: 50%; top: 70%; width: 200vmax; height: 200vmax; border-radius: 50%; background: var(--chapter-paper); transform: translate(-50%, -50%) scale(0); transform-origin: center; pointer-events: none; }
 .room-arrival { position: relative; width: 100%; height: 100%; }
 .room-arrival, .tour-view .room-scene { transform-origin: 50% 50%; }
@@ -37,10 +38,11 @@ html { overflow-x: clip; }
 .night .tour-view .spot-dot { background: #395869b3; color: #e4f0f5; border-color: #bdd4df80; }
 .tour-view .spot-label { font-size: 10px; padding: 5px 8px; }
 .room-tour:not([data-active-chapter='home']) .room-hotspot:not(.is-current) { visibility: hidden; pointer-events: none; }
+.room-tour[data-transitioning='true'] .room-hotspot { visibility: hidden; pointer-events: none; }
 .tour-view .lamp-glow { left: 35.5%; top: 27.5%; }
 .room-hotspot.is-current .spot-dot { background: #426779; color: #fff; box-shadow: 0 0 0 8px #a3c9db1f; }
 .room-hotspot.is-current .spot-label { border-color: #a3c9db70; }
-.tour-aura { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 56%, #93accc0c, transparent 55%); }
+.tour-aura { position: absolute; inset: 0; background: transparent; }
 .room-wordmark { position: absolute; right: 4%; top: 17%; font-size: clamp(18px, 1.6vw, 30px); font-weight: 400; line-height: 1.45; letter-spacing: .09em; margin: 0; transition: opacity .35s; }
 .room-scroll-cue { position: absolute; bottom: 38px; left: 50%; width: 44px; height: 44px; transform: translateX(-50%); display: flex; justify-content: center; align-items: center; font-size: 29px; text-decoration: none; pointer-events: auto; transition: opacity .3s; }
 .room-scroll-cue:hover { color: var(--accent); }
@@ -113,8 +115,8 @@ html.room-opening { overflow-y: hidden; scroll-behavior: auto; }
 .intro-copy { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(780px, calc(100% - 60px)); display: flex; align-items: center; justify-content: center; gap: 32px; transition: opacity .55s, transform .55s; }
 .intro-cube-wrap { display: block; position: relative; width: 72px; height: 72px; flex-shrink: 0; perspective: 700px; }
 .intro-cube-wrap::after { content: ''; position: absolute; bottom: -25px; left: 5px; width: 65px; height: 17px; background: #0002; border-radius: 50%; filter: blur(4px); }
-.intro-cube { display: block; position: relative; width: 72px; height: 72px; transform-style: preserve-3d; transform: rotateX(-25deg) rotateY(45deg); animation: cube-turn .9s cubic-bezier(.2, .65, .2, 1) both; }
-.cube-face { position: absolute; width: 72px; height: 72px; background: #7594aa; backface-visibility: hidden; }
+.intro-cube { display: block; position: relative; width: 72px; height: 72px; -webkit-transform-style: preserve-3d; transform-style: preserve-3d; transform: rotateX(-25deg) rotateY(45deg); animation: cube-turn .9s cubic-bezier(.2, .65, .2, 1) both; }
+.cube-face { position: absolute; width: 72px; height: 72px; background: #7594aa; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .cube-front { transform: translateZ(36px); background: #87a9bf; }
 .cube-back { transform: rotateY(180deg) translateZ(36px); }
 .cube-left { transform: rotateY(-90deg) translateZ(36px); background: #47647d; }
@@ -155,48 +157,84 @@ html.room-opening { overflow-y: hidden; scroll-behavior: auto; }
   .tour-interface .room-message { display: none; }
   .tour-interface .room-controls { right: 18px; gap: 4px; }
 }
+/* Portrait phones use the same scroll timeline, with the camera above a
+   clipped reading window. Controls live in Menu so the entrance stays clear. */
 @media (max-width: 760px) {
+  html { scrollbar-gutter: auto; }
   .tour-panel-layer { display: none; }
-  .room-home .scene-header { padding: 12px 17px; flex-wrap: nowrap; gap: 8px; }
-  .scene-header .brand { font-size: 10px; }
+  .room-home .scene-header { padding: max(12px, env(safe-area-inset-top)) 20px 12px; flex-wrap: nowrap; gap: 8px; }
   .scene-header .brand > span:last-child { display: none; }
-  .scene-header .menu-toggle { min-height: 36px; font-size: 10px; padding: 7px 12px; }
-  .scene-header .theme-toggle { min-height: 44px; padding: 8px 4px; }
-  .scene-header .site-nav { right: 17px; top: 62px; width: 220px; }
-  .tour-view { z-index: 3; }
-  .tour-view::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: calc(43svh + 54px); background: var(--scene-paper); }
-  .scene-window { height: calc(43svh + 54px); }
-  .tour-view .room-stage { top: 46px; left: 50%; transform: translateX(-50%); width: min(86vw, calc(43svh - 46px), 440px); z-index: 1; }
-  .tour-interface .room-message, .room-wordmark, .room-scroll-cue { display: none; }
-  .tour-interface .room-controls { top: calc(43svh + 5px); bottom: auto; right: auto; left: 50%; transform: translateX(-50%); gap: 6px; white-space: nowrap; }
-  .tour-interface .quiet-button { font-size: 9px; padding: 3px 9px; min-height: 29px; }
-  .tour-status { display: none; }
-  .tour-navigation { bottom: 15px; left: 50%; transform: translateX(-50%); padding: 4px; }
-  .tour-stop { width: 35px; height: 35px; }
-  .tour-progress-track { bottom: 7px; width: 244px; left: 50%; transform: translateX(-50%); }
-  .tour-chapters { padding-top: calc(43svh + 57px); }
-  .tour-chapter { align-items: center; padding: 20px 22px 87px; min-height: calc(57svh - 57px); scroll-margin-top: calc(43svh + 57px); }
-  .tour-copy, #tour-home .tour-copy { position: static; width: min(100%, 480px); min-height: 0; padding: 0; margin: 0 auto; background: transparent; }
-  .tour-chapter[data-side] .tour-copy { padding: 0; }
-  .chapter-ribbon { display: none; }
-  .chapter-footer { margin-top: 22px; padding-bottom: 10px; }
-  #tour-home { align-items: center; }
-  .tour-copy h1, .tour-copy h2, #tour-home h1 { font-size: clamp(32px, 8.6vw, 44px); margin-bottom: 14px; }
-  .tour-copy h2 br { display: none; }
-  .tour-copy .eyebrow, #tour-home .eyebrow { font-size: 8px; margin-bottom: 12px; }
-  .tour-copy > p:not(.eyebrow):not(.student-note) { font-size: 12px; max-width: none; margin-bottom: 9px; }
-  .tour-copy .student-note { justify-content: flex-start; margin-top: 12px; font-size: 9px; }
-  .tour-text-link { margin-top: 7px; font-size: 11px; padding: 8px 18px; }
-  .tour-tags { margin: 5px 0 13px; }
-  .tour-projects { margin: 5px 0; }
-  .tour-projects li { padding: 7px 0; font-size: 11px; }
-  .tour-aura { height: 48%; }
-  .tour-view .spot-dot { width: 18px; height: 18px; }
+  .scene-header .brand-mark { width: 32px; height: 32px; font-size: 18px; }
+  .scene-header .menu-toggle { min-height: 40px; font-size: 11px; padding: 8px 13px; background: transparent; }
+  .scene-header .theme-toggle { min-height: 44px; gap: 8px; padding: 8px 0; background: transparent; }
+  .scene-header .theme-switch { width: 38px; height: 22px; }
+  .scene-header .theme-thumb { width: 16px; height: 16px; left: 2px; top: 2px; }
+  .scene-header .theme-toggle[aria-pressed='true'] .theme-thumb { transform: translateX(16px); }
+  .scene-header .site-nav { right: 20px; top: 65px; width: min(250px, calc(100vw - 40px)); max-height: calc(100svh - 90px); overflow-y: auto; }
+  .scene-header .room-controls { position: static; display: flex; flex-direction: column; gap: 8px; padding-top: 12px; margin: 8px 0 0; border-top: 1px solid var(--line); }
+  .scene-header .room-controls .quiet-button { min-height: 42px; font-size: 12px; background: transparent; text-align: left; }
+  .tour-view .room-stage { width: min(108vw, 60vh, 600px); width: min(108vw, 60svh, 600px); height: min(108vw, 60vh, 600px); height: min(108vw, 60svh, 600px); top: 50%; }
+  .room-wordmark { right: 26px; top: 14%; font-size: clamp(21px, 6.1vw, 31px); line-height: 1.35; letter-spacing: .09em; }
+  .tour-interface .room-message { display: none; }
+  .tour-status { left: 24px; top: 73px; transform: none; font-size: 10px; gap: 5px; }
+  .tour-status-label { display: none; }
+  .tour-status-divider { margin-right: 6px; }
+  .tour-navigation { bottom: max(10px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); padding: 0; gap: 0; border: 0; background: var(--panel-paper); }
+  .tour-stop { width: clamp(40px, 10vw, 44px); height: 44px; font-size: 9px; }
+  .tour-progress-track { height: 1px; }
+  .tour-view .room-hotspot { width: 44px; height: 44px; }
+  .tour-view .spot-dot { width: 13px; height: 13px; font-size: 9px; border-width: 1px; box-shadow: none; }
   .tour-view .spot-label { font-size: 8px; padding: 4px 6px; }
-  .intro-copy { gap: 24px; }
-  .intro-cube-wrap { transform: scale(.7); margin-left: -10px; }
-  .intro-title { font-size: 20px; }
-  .intro-skip { right: 17px; top: 12px; }
+  .room-hotspot.is-current .spot-dot { box-shadow: 0 0 0 4px #f8f0dc18; }
+  .tour-copy, #tour-home .tour-copy { width: 100%; min-height: 0; padding: 36px 26px 80px; }
+  .tour-chapter[data-side] .tour-copy { padding: 36px 26px 80px; }
+  .tour-copy h1, .tour-copy h2, #tour-home h1 { font-size: clamp(29px, 7.6vw, 38px); margin-bottom: 18px; }
+  .tour-copy h2 br { display: none; }
+  .tour-copy > p:not(.eyebrow):not(.student-note):not(.chapter-footer) { font-size: 13px; line-height: 1.8; margin-bottom: 20px; }
+  .tour-copy .eyebrow { font-size: 8px; margin-bottom: 20px; }
+  .tour-text-link { font-size: 11px; padding: 12px 20px; margin-top: 8px; }
+  .chapter-footer { margin-top: 35px; padding-bottom: 12px; }
+  .chapter-ribbon { display: none; }
+  .intro-copy { flex-direction: column; gap: 42px; width: calc(100% - 40px); text-align: center; }
+  .intro-cube-wrap { transform: scale(.75); }
+  .intro-title { font-size: 22px; }
+  .intro-skip { right: 20px; top: auto; bottom: max(25px, env(safe-area-inset-bottom)); font-size: 10px; padding: 9px 12px; border-color: transparent; background: transparent; }
+  .intro-enter { bottom: max(28px, env(safe-area-inset-bottom)); }
+  .room-scroll-cue { display: flex; bottom: max(16px, env(safe-area-inset-bottom)); }
+  /* A failed or disabled enhancement still leaves a normal mobile document. */
+  .room-tour:not(.tour-story) .tour-view { position: relative; height: auto; padding-top: 80px; }
+  .room-tour:not(.tour-story) .scene-window { position: relative; }
+  .room-tour:not(.tour-story) .room-stage { position: relative; top: auto; left: auto; transform: none; width: min(94vw, 600px); height: min(94vw, 600px); margin: auto; }
+  .room-tour:not(.tour-story) .tour-interface { position: relative; height: 80px; margin-top: 0; }
+  .room-tour:not(.tour-story) .room-wordmark,
+  .room-tour:not(.tour-story) .room-scroll-cue,
+  .room-tour:not(.tour-story) .tour-status { display: none; }
+  .room-tour:not(.tour-story) .tour-chapters { margin-top: 0; }
+  .room-tour:not(.tour-story) .tour-chapter { min-height: 0; border-top: 1px solid var(--line); }
+  .room-tour:not(.tour-story) .tour-copy,
+  .room-tour:not(.tour-story) #tour-home .tour-copy { position: static; width: 100%; min-height: 0; padding: 36px 26px; background: transparent; }
+}
+@media (max-width: 760px) and (min-height: 521px) {
+  .tour-mobile-story .tour-view,
+  .tour-mobile-story .tour-interface { height: var(--tour-height, 100svh); }
+  .tour-mobile-story .tour-interface,
+  .tour-mobile-story .tour-chapters { margin-top: calc(-1 * var(--tour-height, 100svh)); }
+  .tour-mobile-story .room-stage { width: var(--room-size); }
+  .tour-mobile-story .tour-chapters { padding: 0; clip-path: inset(0); }
+  .tour-mobile-story .tour-chapter { display: block; min-height: 0; padding: 0; scroll-margin-top: 0; }
+  .tour-mobile-story .tour-reading-window { display: block; position: absolute; top: var(--reading-top); bottom: 0; width: 100%; overflow: hidden; overflow: clip; }
+  .tour-mobile-story .tour-paper { position: absolute; top: 0; left: 0; min-height: calc(var(--reading-height) * 1.25); background: var(--panel-paper); justify-content: flex-start; border-radius: 28px 28px 65px 0; overflow: hidden; }
+  .tour-mobile-story .tour-paper .chapter-next { margin-top: auto; padding-top: 35px; }
+  .tour-mobile-story .tour-paper.is-visible { will-change: transform; }
+  .tour-mobile-story .tour-home-caption { position: absolute; left: 26px; right: 26px; bottom: 13%; top: auto; width: auto; min-height: 0; padding: 0; background: transparent; }
+  .tour-mobile-story .tour-home-caption h1 { font-size: clamp(29px, 7.8vw, 38px); margin-bottom: 12px; }
+  .tour-mobile-story .tour-home-caption .eyebrow { font-size: 8px; margin-bottom: 12px; }
+  .tour-mobile-story .tour-home-caption .tour-lead { font-size: 12px; margin: 0; color: var(--ink); }
+  .tour-mobile-story .tour-home-caption .student-note,
+  .tour-mobile-story .tour-home-caption .tour-text-link { display: none; }
+  .tour-mobile-story[data-active-chapter='home'] .tour-navigation { visibility: hidden; pointer-events: none; }
+  .intro-running .tour-home-caption { opacity: 0; }
+  .intro-finishing .tour-home-caption { animation: intro-word .6s 1.4s both; }
 }
 /* A short window gets a normal stacked layout. */
 @media (max-height: 520px) {
@@ -204,7 +242,7 @@ html.room-opening { overflow-y: hidden; scroll-behavior: auto; }
   .tour-view { position: relative; height: auto; padding: 80px 0 110px; }
   .tour-view::before { display: none; }
   .scene-window { position: relative; height: auto; overflow: hidden; }
-  .tour-view .room-stage { position: relative; top: auto; left: auto; transform: none; width: min(76vw, 340px); margin: auto; }
+  .room-tour:not(.tour-story) .tour-view .room-stage { position: relative; top: auto; left: auto; transform: none; width: min(76vw, 340px); height: min(76vw, 340px); margin: auto; }
   .tour-status, .room-wordmark, .room-scroll-cue, .tour-interface .room-message { display: none; }
   .tour-interface { position: relative; height: 110px; margin-top: -110px; }
   .tour-chapters { margin-top: 0; padding-top: 0; }
@@ -258,3 +296,44 @@ html.room-opening { overflow-y: hidden; scroll-behavior: auto; }
 @media (max-width: 760px), (max-height: 520px) {
   .chapter-next { margin-top: 18px; }
 }
+
+/* The palette changes once per click; geometry stays unflattened. */
+.room-home .theme-toggle { border-color: transparent; background: transparent; }
+.room-home .theme-switch { background: #c9a99f; border-color: transparent; }
+.room-home .theme-thumb { background: #fff6e2; }
+.room-home .theme-toggle[aria-pressed='true'] .theme-switch { background: #fff4df; }
+.room-home .theme-toggle[aria-pressed='true'] .theme-thumb { background: #5b6ead; }
+.room-home .theme-toggle[aria-pressed='true'] .theme-moon { color: #fff4df; }
+.room-home .theme-toggle[aria-pressed='false'] .theme-sun { color: #343c40; }
+.js-enabled:not(.keyboard-input) .theme-toggle:focus,
+.js-enabled:not(.keyboard-input) .intro-skip:focus,
+.js-enabled:not(.keyboard-input) .intro-enter:focus { outline: none; }
+.js-enabled:not(.keyboard-input) .brand:focus { outline: none; }
+.keyboard-input :focus { outline: 3px solid var(--accent); outline-offset: 5px; }
+@media (hover: none) {
+  .room-home .theme-toggle:hover { border-color: transparent; background: transparent; }
+  .room-home .room-hotspot:hover .spot-dot { transform: none; box-shadow: none; }
+}
+
+/* One measured coordinate system for layout and the camera. In particular,
+   older Safari need not support svh/aspect-ratio to show the complete square. */
+.tour-story .tour-view, .tour-story .tour-interface { height: var(--tour-height, 100vh); }
+.tour-story .tour-interface, .tour-story .tour-chapters { margin-top: calc(-1 * var(--tour-height, 100vh)); }
+.room-tour.tour-enhanced .room-stage, .tour-story .room-stage { width: var(--room-size); height: var(--room-size); }
+.tour-story:not(.tour-mobile-story) .tour-paper { min-height: var(--paper-min-height, 125vh); }
+@supports not (overflow: clip) {
+  .tour-story .tour-interface { overflow: hidden; }
+}
+/* Older/limited browsers retain ordinary reading and every page link. */
+.tour-basic .tour-panel-layer { display: none; }
+.tour-basic .tour-view { position: relative; height: auto; padding: 85px 0 0; }
+.tour-basic .scene-window { position: relative; }
+.tour-basic .tour-view .room-stage { position: relative; left: auto; top: auto; transform: none; width: 85%; width: var(--room-size, 85%); height: auto; height: var(--room-size, auto); aspect-ratio: 1; margin: auto; }
+.tour-basic .room-scene { position: relative; }
+.tour-basic .tour-interface { position: relative; height: 150px; margin: 0; overflow: visible; }
+.tour-basic .tour-chapters { margin: 0; padding: 0; }
+.tour-basic .tour-chapter { min-height: 0; display: block; padding: 0; }
+.tour-basic .tour-copy, .tour-basic #tour-home .tour-copy { position: static; width: 100%; max-width: 720px; min-height: 0; padding: 46px 26px; margin: auto; border-top: 1px solid var(--line); background: transparent; }
+.tour-basic .chapter-ribbon, .tour-basic .room-wordmark, .tour-basic .room-scroll-cue, .tour-basic .tour-status { display: none; }
+.tour-basic .tour-interface .room-controls { top: 20px; bottom: auto; left: 50%; right: auto; transform: translateX(-50%); white-space: nowrap; }
+.tour-basic .tour-navigation { bottom: 15px; left: 50%; transform: translateX(-50%); }

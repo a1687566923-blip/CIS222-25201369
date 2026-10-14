@@ -5,6 +5,9 @@
 
   function startPortfolio() {
     document.body.classList.add('js-enabled');
+    // Touch and programmatic focus stay quiet; keyboard focus remains visible.
+    document.addEventListener('keydown', function () { document.body.classList.add('keyboard-input'); });
+    document.addEventListener('pointerdown', function () { document.body.classList.remove('keyboard-input'); }, { passive: true });
 
     // 1. Open and close the mobile navigation.
     var menuButton = document.querySelector('.menu-toggle');
@@ -109,10 +112,12 @@
         updateMotion();
       });
     }
-    motionPreference.addEventListener('change', function () {
+    function onMotionChange() {
       motionPaused = motionPreference.matches;
       updateMotion();
-    });
+    }
+    if (motionPreference.addEventListener) { motionPreference.addEventListener('change', onMotionChange); }
+    else if (motionPreference.addListener) { motionPreference.addListener(onMotionChange); }
     if (room && !roomTour) {
       window.addEventListener('scroll', function () {
         if (!frameQueued) {

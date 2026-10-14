@@ -1,15 +1,15 @@
 /* Pure CSS 3D geometry. Keep every 3D ancestor unflattened: no filter,
    opacity animation, paint containment or clipped overflow on these wrappers. */
-.room-model { position: absolute; inset: 0; --model-unit: 1px; --model-yaw: 0deg; --model-tilt: 0deg; pointer-events: auto; }
-.room-model, .model-camera, .model-tilt, .model-world, .model-group, .model-cuboid { transform-style: preserve-3d; }
+.room-model { position: absolute; inset: 0; --model-unit: 1px; --model-yaw: 0deg; --model-tilt: 0deg; --floor-light: #ac8b62; --floor-mid: #967750; --floor-dark: #7b644b; --duvet-light: #8fa2af; --duvet-mid: #718b9e; --duvet-dark: #526d85; --fabric-seam: #b8c9d32e; --lamp-wall: transparent; --lamp-shade-edge: #d2cfc6; --lamp-shade-center: #eeebe0; pointer-events: auto; }
+.room-model, .model-camera, .model-tilt, .model-world, .model-group, .model-cuboid { -webkit-transform-style: preserve-3d; transform-style: preserve-3d; }
 .room-model * { pointer-events: none; box-sizing: border-box; }
 .has-room-model > .lamp-glow { display: none; }
 .model-camera { position: absolute; left: 50%; top: 61%; width: 0; height: 0; }
 .model-tilt { position: absolute; width: 0; height: 0; transform: rotateX(calc(58deg + var(--model-tilt))); }
 .model-world { position: absolute; width: calc(400 * var(--model-unit)); height: calc(400 * var(--model-unit)); left: calc(-200 * var(--model-unit)); top: calc(-200 * var(--model-unit)); transform: rotateZ(calc(-45deg + var(--model-yaw))); transform-origin: 50% 50%; }
 .model-group { position: absolute; left: calc(var(--gx) * var(--model-unit)); top: calc(var(--gy) * var(--model-unit)); width: 0; height: 0; transform-origin: 0 0; }
-.model-cuboid { position: absolute; left: 0; top: 0; width: 0; height: 0; transform: translate3d(calc(var(--cx) * var(--model-unit)), calc(var(--cy) * var(--model-unit)), calc(var(--cz) * var(--model-unit))) rotateZ(var(--rz)) rotateY(var(--ry)) rotateX(var(--rx)); }
-.model-face { position: absolute; display: block; left: 0; top: 0; backface-visibility: hidden; background: var(--face-front); }
+.model-cuboid { position: absolute; left: 0; top: 0; width: 0; height: 0; --face-front: var(--day-front); --face-top: var(--day-top); --face-dark: var(--day-dark); transform: translate3d(calc(var(--cx) * var(--model-unit)), calc(var(--cy) * var(--model-unit)), calc(var(--cz) * var(--model-unit))) rotateZ(var(--rz)) rotateY(var(--ry)) rotateX(var(--rx)); }
+.model-face { position: absolute; display: block; left: 0; top: 0; -webkit-backface-visibility: hidden; backface-visibility: hidden; background: var(--face-front); }
 .face-top, .face-bottom { width: calc(var(--w) * var(--model-unit)); height: calc(var(--d) * var(--model-unit)); margin-left: calc(var(--w) * var(--model-unit) / -2); margin-top: calc(var(--d) * var(--model-unit) / -2); }
 .face-top { transform: translateZ(calc(var(--h) * var(--model-unit) / 2)); background: var(--face-top); }
 .face-bottom { transform: translateZ(calc(var(--h) * var(--model-unit) / -2)) rotateX(180deg); background: var(--face-dark); }
@@ -21,14 +21,14 @@
    and height runs along Z, exactly as on the front/back faces. */
 .face-left { transform: translateX(calc(var(--w) * var(--model-unit) / -2)) rotateY(-90deg) rotateZ(90deg); }
 .face-right { transform: translateX(calc(var(--w) * var(--model-unit) / 2)) rotateY(90deg) rotateZ(-90deg); background: var(--face-dark); }
-.model-panel { position: absolute; left: 0; top: 0; width: calc(var(--pw) * var(--model-unit)); height: calc(var(--ph) * var(--model-unit)); margin-left: calc(var(--pw) * var(--model-unit) / -2); margin-top: calc(var(--ph) * var(--model-unit) / -2); transform: translate3d(calc(var(--cx) * var(--model-unit)), calc(var(--cy) * var(--model-unit)), calc(var(--cz) * var(--model-unit))) rotateZ(var(--rz)) rotateX(var(--rx)); backface-visibility: hidden; }
+.model-panel { position: absolute; left: 0; top: 0; width: calc(var(--pw) * var(--model-unit)); height: calc(var(--ph) * var(--model-unit)); margin-left: calc(var(--pw) * var(--model-unit) / -2); margin-top: calc(var(--ph) * var(--model-unit) / -2); transform: translate3d(calc(var(--cx) * var(--model-unit)), calc(var(--cy) * var(--model-unit)), calc(var(--cz) * var(--model-unit))) rotateZ(var(--rz)) rotateX(var(--rx)); -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .model-panel svg { display: block; width: 100%; height: 100%; }
 .model-anchor { position: absolute; left: 0; top: 0; width: 1px; height: 1px; transform: translate3d(calc(var(--cx) * var(--model-unit)), calc(var(--cy) * var(--model-unit)), calc(var(--cz) * var(--model-unit))); }
-.model-floor .face-top { background: repeating-linear-gradient(0deg, transparent 0, transparent calc(29 * var(--model-unit)), #322d284a calc(29 * var(--model-unit)), #322d284a calc(30 * var(--model-unit))), linear-gradient(100deg, #6a5542, #806c56 52%, #5e4d3c); }
+.model-floor .face-top { background: repeating-linear-gradient(0deg, transparent 0, transparent calc(29 * var(--model-unit)), #29284425 calc(29 * var(--model-unit)), #29284425 calc(30 * var(--model-unit))), linear-gradient(100deg, var(--floor-mid), var(--floor-light) 52%, var(--floor-dark)); }
 .model-shadow { border-radius: 38%; background: #080d1330; box-shadow: 0 0 calc(14 * var(--model-unit)) calc(4 * var(--model-unit)) #080d132e; }
 .model-rug { border: calc(3 * var(--model-unit)) solid #393e43; background: repeating-linear-gradient(90deg, #3e464e 0, #3e464e calc(4 * var(--model-unit)), #434b54 calc(4 * var(--model-unit)), #434b54 calc(5 * var(--model-unit))); }
 .model-blanket { background: repeating-linear-gradient(90deg, #283c56 0, #283c56 calc(23 * var(--model-unit)), #334b65 calc(23 * var(--model-unit)), #334b65 calc(25 * var(--model-unit))); border-bottom: calc(7 * var(--model-unit)) solid #3a526e; }
-.model-blue-led .face-front, .model-blue-led .face-top { box-shadow: 0 0 calc(7 * var(--model-unit)) #66badd8c; }
+.model-blue-led .face-front, .model-blue-led .face-top { box-shadow: none; }
 .model-screen { border: calc(3 * var(--model-unit)) solid #101722; background: #15212f; overflow: hidden; }
 .screen-movie { display: block; width: 100%; height: 100%; }
 .screen-movie .movie-cube, .screen-movie .movie-room, .screen-movie .movie-piece { transform-box: fill-box; transform-origin: center; }
@@ -54,9 +54,9 @@
 @keyframes art-float { 50% { transform: translateY(-2px); } }
 @keyframes art-drift { 50% { transform: translateY(2px) rotate(8deg); } }
 .room-model:not(.screen-active) .screen-movie *, .room-model:not(.art-active) .wall-art * { animation-play-state: paused; }
-.model-duvet .face-top { border-radius: calc(6 * var(--model-unit)); background: repeating-linear-gradient(90deg, transparent 0, transparent calc(24 * var(--model-unit)), #92abc425 calc(24 * var(--model-unit)), #92abc425 calc(25 * var(--model-unit))), linear-gradient(110deg, #445f7b, #607c94 55%, #354f6d); }
-.model-duvet .face-front, .duvet-drape .face-front { background: repeating-linear-gradient(90deg, #3b5875 0, #3b5875 calc(24 * var(--model-unit)), #4d6b87 calc(24 * var(--model-unit)), #4d6b87 calc(25 * var(--model-unit))); }
-.duvet-fold .face-top { background: linear-gradient(0deg, #8097aa, #5c768f); }
+.model-duvet .face-top { border-radius: calc(6 * var(--model-unit)); background: repeating-linear-gradient(90deg, transparent 0, transparent calc(24 * var(--model-unit)), var(--fabric-seam) calc(24 * var(--model-unit)), var(--fabric-seam) calc(25 * var(--model-unit))), linear-gradient(110deg, var(--duvet-mid), var(--duvet-light) 55%, var(--duvet-dark)); }
+.model-duvet .face-front, .duvet-drape .face-front { background: repeating-linear-gradient(90deg, transparent 0, transparent calc(24 * var(--model-unit)), var(--fabric-seam) calc(24 * var(--model-unit)), var(--fabric-seam) calc(25 * var(--model-unit))), var(--duvet-dark); }
+.duvet-fold .face-top { background: linear-gradient(0deg, var(--duvet-light), var(--duvet-mid)); }
 .screen-orbit { position: absolute; left: 54%; top: 15%; width: 28%; height: 59%; border: calc(1.4 * var(--model-unit)) solid #b9e6eb85; border-radius: 50%; transform: rotate(-28deg); }
 .screen-line { position: absolute; left: 9%; top: 57%; width: 22%; height: 3%; background: #b4d4df; }
 .screen-line.line-two { top: 68%; width: 29%; background: #739daf; }
@@ -72,18 +72,58 @@
 .note-two { right: 10%; top: 19%; background: #c9ae89; transform: rotate(7deg); }
 .note-three { left: 33%; bottom: 8%; background: #93aabb; transform: rotate(-3deg); }
 .board-pin { position: absolute; width: 6%; height: 6%; left: 46%; top: 48%; border-radius: 50%; background: #4c657e; }
-.model-lampshade .face-bottom { background: #f1d69a; box-shadow: 0 0 calc(28 * var(--model-unit)) #ffd59b50; }
-.model-warm-light { background: #f8db9c; box-shadow: 0 0 calc(20 * var(--model-unit)) #eabb7240; }
+.model-lampshade { clip-path: polygon(22% 0, 78% 0, 100% 100%, 0 100%); background: linear-gradient(90deg, var(--lamp-shade-edge), var(--lamp-shade-center) 50%, var(--lamp-shade-edge)); }
+.model-lamp-cap { border-radius: 50%; background: var(--lamp-shade-edge); }
+.model-warm-light { border-radius: 50%; background: transparent; box-shadow: none; }
+.model-lamp-halo { background: transparent; border-radius: 50%; }
 .table-round-top { border-radius: 50%; background: radial-gradient(ellipse at 35% 40%, #8c7055, #68523d); border: calc(1.3 * var(--model-unit)) solid #92795c; }
 .table-round-edge { background: #6f543e; }
 .controller-button { border-radius: 50%; }
 .model-notebook .face-top { border-left: calc(2 * var(--model-unit)) solid #536777; background: linear-gradient(0deg, #99aab8, #7e95a7); }
 .model-map { border: calc(1 * var(--model-unit)) solid #b8b092; }
+.model-ground-shadow { border-radius: 4%; background: #3431422b; }
+.model-lamp-pool { background: transparent; border-radius: 50%; }
+.model-wall-left > .model-cuboid:first-child > .face-front { background: radial-gradient(ellipse at 60% 60%, var(--lamp-wall), transparent 60%), var(--face-front); }
+.model-wall-right > .model-cuboid:first-child > .face-left { background: radial-gradient(ellipse at 34% 60%, var(--lamp-wall), transparent 60%), var(--face-front); }
+.night .room-model { --floor-light: #565671; --floor-mid: #424661; --floor-dark: #343b56; --duvet-light: #5b628d; --duvet-mid: #454e79; --duvet-dark: #303957; --fabric-seam: #c2bde422; --lamp-wall: #fff2cc78; --lamp-shade-edge: #e8cda3; --lamp-shade-center: #fff7d9; }
+.night .model-cuboid { --face-front: var(--night-front); --face-top: var(--night-top); --face-dark: var(--night-dark); }
+.night .model-ground-shadow { background: #242b6659; }
+.night .model-lamp-pool { background: radial-gradient(ellipse, #ffedc15c, #efd6a02b 36%, transparent 70%); }
+.night .model-warm-light { background: #fff0bd; }
+.night .model-lamp-halo { background: radial-gradient(circle, #fff6d938, #ffe1a51c 30%, transparent 70%); }
+.night .model-window .sky-top { stop-color: #263363; }
+.night .model-window .sky-bottom { stop-color: #627aab; }
+.night .model-window .sky-orb { fill: #e4ebfc; }
+.night .model-window .city-hills { fill: #4b5e91; }
+.night .model-window .city-buildings { fill: #263856; }
+.model-window .city-light { fill: #d8c8a650; }
+.night .model-window .city-light { fill: #f2d89c; }
+.model-picture { border-color: #b59b78; }
+.night .model-picture { border-color: #60688f; }
+.model-window { border-color: #939e9e; box-shadow: none; }
+.night .model-window { border-color: #52628c; }
+.model-window::after { background: linear-gradient(90deg, transparent 48%, #919c9f 48%, #919c9f 52%, transparent 52%), linear-gradient(0deg, transparent 47%, #919c9f 47%, #919c9f 51%, transparent 51%); }
+.night .model-window::after { background: linear-gradient(90deg, transparent 48%, #52648e 48%, #52648e 52%, transparent 52%), linear-gradient(0deg, transparent 47%, #52648e 47%, #52648e 51%, transparent 51%); }
+.night .model-rug { border-color: #303b5c; background: repeating-linear-gradient(90deg, #354360 0, #354360 calc(4 * var(--model-unit)), #3e4a69 calc(4 * var(--model-unit)), #3e4a69 calc(5 * var(--model-unit))); }
+.night .table-round-top { border-color: #6f6d88; background: radial-gradient(ellipse at 35% 40%, #635e7d, #44445f); }
+.night .table-round-edge { background: #44425f !important; }
+.night .model-bedside-lamp .table-round-top { border-color: #ab9676; background: radial-gradient(ellipse, #e6cea1, #b49b79 50%, #74695e); }
+.night .model-bedside-lamp .table-round-edge { background: #79674f !important; }
+/* Shadows remain contact shapes on phones; no blurred layer per furniture. */
+.model-compact .model-shadow { box-shadow: none; background: #28294721; }
+.model-compact .model-blue-led .model-face,
+.model-compact .model-warm-light { box-shadow: none; }
+.model-compact .model-rug { background: #555c6b; }
+.night .model-compact .model-rug { background: #36435f; }
+.model-compact .model-duvet .face-top { background: linear-gradient(110deg, var(--duvet-mid), var(--duvet-light) 55%, var(--duvet-dark)); }
+.night .model-duvet .face-top { background: radial-gradient(ellipse at 0 0, #ffedc12b, transparent 60%), linear-gradient(110deg, var(--duvet-mid), var(--duvet-light) 38%, var(--duvet-dark)); }
+.room-model:not(.is-building) .model-face.rest-occluded { display: none; }
 .hide-left-wall .model-wall-left, .hide-left-wall .wall-left-object, .hide-right-wall .model-wall-right, .hide-right-wall .wall-right-object { visibility: hidden; }
 /* Root calls replay() at the start of body.intro-finishing. No looping and no
    group opacity: a translucent 3D ancestor would flatten its children. */
 .intro-running .room-model .model-group:not(.is-static) { transform: scale(.001); }
 .room-model.is-building .model-group:not(.is-static) { animation: room-piece-build 650ms cubic-bezier(.22, .8, .24, 1) var(--piece-delay) both; }
+.room-model.model-compact.is-building .model-group:not(.is-static) { animation-duration: 500ms; }
 @keyframes room-piece-build {
   from { transform: translateZ(calc(45 * var(--model-unit))) rotateZ(-360deg) scale(.001); }
   to { transform: translateZ(0) rotateZ(0deg) scale(1); }
