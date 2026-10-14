@@ -52,7 +52,7 @@
         // flatten the room and turn the theme toggle into a flat image effect.
         return {
           day: daytime || original.map(function (color) { return tint(color, '#fff5df', 0.16); }),
-          night: nighttime || original.map(function (color) { return tint(tint(color, '#41507d', 0.28), '#141c38', 0.18); })
+          night: nighttime || original
         };
       }
       function lamplight(color, x, y, z) {
@@ -64,17 +64,74 @@
       // A small vector movie on the monitor: greeting cube, room assembly,
       // then title. Its own timeline loops without rebuilding the real room.
       function screenMovie() {
-        return '<svg class="screen-movie" viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg">' +
-          '<rect width="200" height="112" fill="#15212f"/>' +
+        // Project the current room coordinates once into a small flat SVG.
+        // The movie has no second 3D scene, iframe or per-frame drawing loop.
+        function point(x, y, z) {
+          return [(100 + (x + y) * 0.14142).toFixed(2), (73 + (y - x) * 0.07494 - z * 0.16961).toFixed(2)];
+        }
+        function surface(points, day, night) {
+          return '<polygon class="movie-material" points="' + points.map(function (p) { return p.join(','); }).join(' ') +
+            '" fill="' + night + '" style="--movie-day:' + day + ';--movie-night:' + night + '"/>';
+        }
+        function solid(x, y, z, w, d, h, palette) {
+          var a = x - w / 2, b = x + w / 2, c = y - d / 2, e = y + d / 2;
+          return surface([point(a, c, z), point(a, e, z), point(a, e, z + h), point(a, c, z + h)], palette.day[2], lamplight(palette.night[2], a, y, z + h / 2)) +
+            surface([point(a, e, z), point(b, e, z), point(b, e, z + h), point(a, e, z + h)], palette.day[0], lamplight(palette.night[0], x, e, z + h / 2)) +
+            surface([point(a, c, z + h), point(b, c, z + h), point(b, e, z + h), point(a, e, z + h)], palette.day[1], lamplight(palette.night[1], x, y, z + h));
+        }
+        function wallGraphic(x, y, z, w, h, side, content) {
+          var start = point(x, y, z), end = side === 'left' ? point(x + w, y, z) : point(x, y + w, z);
+          var down = point(x, y, z - h);
+          return '<g transform="matrix(' + ((end[0] - start[0]) / w).toFixed(5) + ',' + ((end[1] - start[1]) / w).toFixed(5) + ',0,' + ((down[1] - start[1]) / h).toFixed(5) + ',' + start.join(',') + ')">' + content + '</g>';
+        }
+        function roundSurface(x, y, z, radius) {
+          var points = [];
+          for (var side = 0; side < 12; side += 1) { var angle = side * Math.PI / 6; points.push(point(x + radius * Math.cos(angle), y + radius * Math.sin(angle), z)); }
+          return surface(points, wood.day[1], lamplight(wood.night[1], x, y, z));
+        }
+        var shell = solid(0, 0, -14, 400, 400, 14, wood) +
+          solid(0, -199, 0, 405, 10, 230, colors('#2c333d', '#49515c', '#1a2028', ['#d8d5ca', '#eee6d4', '#aeaca4'])) +
+          solid(199, 0, 0, 10, 400, 230, colors('#323c49', '#4d5765', '#202833', ['#cecec4', '#e5decd', '#a1a5a0'])) +
+          surface([point(-20, -20, 1), point(96, -20, 1), point(96, 110, 1), point(-20, 110, 1)], '#555c6b', '#3e464e');
+        var art = wallGraphic(-107, -192, 214, 125, 105, 'left', '<rect width="125" height="105" fill="#183148" stroke="#293440" stroke-width="7"/><circle cx="97" cy="19" r="7" fill="#e4ebfc"/><path d="M1 104V66H17V104M21 104V51H38V104M43 104V70H56V104M63 104V37H81V104M87 104V62H103V104M108 104V49H125V104" fill="#102034"/><path d="M7 73V97M28 60V98M70 45V98M95 70V98M117 57V98" stroke="#dfc797" stroke-width="3" stroke-dasharray="4 7"/>') +
+          wallGraphic(193, -40, 188, 73, 60, 'right', '<rect width="73" height="60" fill="#274357" stroke="#887761" stroke-width="5"/><circle cx="51" cy="17" r="9" fill="#dcc491"/><path d="M0 50L24 23L46 42L73 32V60H0Z" fill="#486779"/>') +
+          wallGraphic(193, 59, 192, 76, 66, 'right', '<rect width="76" height="66" fill="#344858" stroke="#887761" stroke-width="5"/><ellipse cx="38" cy="33" rx="26" ry="15" fill="none" stroke="#bca47a" stroke-width="3"/><circle cx="38" cy="33" r="9" fill="#8daab8"/>') +
+          wallGraphic(193, 64, 112, 62, 42, 'right', '<rect width="62" height="42" fill="#294f59" stroke="#887761" stroke-width="5"/><path d="M31 6L49 33H13Z" fill="#c4d5d4"/>');
+        var shelf = solid(127, -178, 0, 106, 4, 199, wood);
+        [-50, 50].forEach(function (x) { shelf += solid(127 + x, -160, 0, 7, 40, 199, wood); });
+        [0, 51, 103, 153, 194].forEach(function (z) { shelf += solid(127, -160, z, 106, 40, 5, wood); });
+        [56, 108, 158].forEach(function (z, row) {
+          ['#748ba2', '#b2ad95', '#67567b', '#c4ab7c'].forEach(function (color, book) { shelf += solid(90 + book * 21, -157, z, 14, 23, 29 + (row + book) % 3 * 4, colors(color, color, '#303641')); });
+        });
+        var bedMovie = solid(130, 64, 8, 104, 210, 28, wood) + solid(130, -38, 8, 108, 9, 72, dark) +
+          solid(130, 64, 36, 100, 202, 16, blue) + solid(130, -2, 52, 80, 39, 11, white) +
+          solid(130, 90, 52, 101, 144, 9, blue) + solid(130, 25, 61, 100, 15, 3, colors('#57718a', '#6d879e', '#3d566f')) + solid(130, 166, 30, 100, 3, 28, blue);
+        var deskMovie = '';
+        [-61, 61].forEach(function (x) { [-25, 25].forEach(function (y) { deskMovie += solid(-105 + x, -119 + y, 0, 5, 5, 84, dark); }); });
+        deskMovie += solid(-105, -119, 84, 146, 68, 6, wood) + solid(-85, -124, 90, 39, 24, 3, dark) +
+          solid(-85, -128, 93, 5, 6, 14, dark) + solid(-85, -128, 107, 87, 7, 51, dark) +
+          wallGraphic(-128, -124, 154, 81, 44, 'left', '<rect width="81" height="44" fill="#0d1722"/><path d="M8 12H34M8 21H24M8 30H39" stroke="#9cbfcc" stroke-width="2"/>') +
+          solid(-104, -103, 91, 51, 17, 3, dark) + solid(-65, -102, 91, 11, 18, 6, dark) +
+          wallGraphic(-165, -130, 139, 30, 47, 'left', '<path d="M3 42V19C3 -4 27 -4 27 19V42" fill="none" stroke="#222a33" stroke-width="7"/>');
+        var chairMovie = solid(-82, -26, 9, 5, 5, 34, colors('#89949e')) + solid(-82, -26, 42, 45, 45, 7, dark) +
+          solid(-82, -26, 49, 41, 41, 3, white) + solid(-82, -3, 49, 45, 9, 63, white) + solid(-82, -4, 106, 27, 10, 11, dark);
+        [-29, 29].forEach(function (x) { chairMovie += solid(-82 + x, -26, 65, 7, 34, 5, white); });
+        var lampPoint = point(bedsideLight.x, bedsideLight.y, 92);
+        var lampMovie = '<circle class="movie-lamp-glow" cx="' + lampPoint[0] + '" cy="' + lampPoint[1] + '" r="15" fill="url(#movie-lamplight)"/>';
+        [30, 150, 270].forEach(function (angle) { var radians = angle * Math.PI / 180; lampMovie += solid(42 + 18 * Math.cos(radians), -65 + 18 * Math.sin(radians), 0, 4, 4, 58, wood); });
+        lampMovie += roundSurface(42, -65, 62, 25) + solid(42, -65, 62, 15, 15, 3, dark) + solid(42, -65, 65, 3, 3, 21, colors('#93816a'));
+        lampMovie += surface([point(33, -65, 102), point(51, -65, 102), point(58, -65, 83), point(26, -65, 83)], '#eeebe0', '#fff4d2');
+        var tableMovie = '';
+        [30, 150, 270].forEach(function (angle) { var radians = angle * Math.PI / 180; tableMovie += solid(-62 + 25 * Math.cos(radians), 54 + 25 * Math.sin(radians), 0, 5, 5, 27, dark); });
+        tableMovie += roundSurface(-62, 54, 32, 40) + solid(-62, 50, 33, 29, 17, 5, dark) + solid(-78, 66, 33, 17, 25, 3.2, colors('#8295a5', '#9aabb8', '#516576'));
+        var extras = solid(-168, -81, 2, 50, 30, 25, colors('#283f55', '#3c5870', '#172838')) + solid(-168, -81, 31, 23, 3, 3, dark) +
+          surface([point(-197, -22, 1), point(-156, -22, 1), point(-156, 32, 1), point(-197, 32, 1)], '#ddd6bb', '#ddd6bb');
+        return '<svg class="screen-movie" data-room-version="20261015-dark-nav1" viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg">' +
+          '<defs><radialGradient id="movie-lamplight"><stop stop-color="#ffedc1" stop-opacity=".7"/><stop offset="1" stop-color="#ffedc1" stop-opacity="0"/></radialGradient></defs><rect class="movie-backdrop" width="200" height="112" fill="#202735"/>' +
           '<g class="movie-cube"><path d="M34 44L47 37L60 44L47 52Z" fill="#b6d4e4"/><path d="M34 44V59L47 67V52Z" fill="#739eb8"/><path d="M47 52V67L60 59V44Z" fill="#486c87"/></g>' +
           '<text class="movie-hello" x="69" y="57" fill="#d8e4ec" font-family="Arial,sans-serif" font-size="7">Hi, I’m Kwok Ho.</text>' +
-          '<g class="movie-room"><g class="movie-shell"><path d="M101 21L46 48L101 81L158 51Z" fill="#76614b"/><path d="M46 48V21L101 0V21Z" fill="#343e4a"/><path d="M101 0L158 25V51L101 21Z" fill="#465365"/><path d="M46 48V53L101 86V81Z" fill="#554637"/><path d="M101 81V86L158 56V51Z" fill="#44372e"/></g>' +
-          '<g class="movie-piece movie-bed"><path d="M120 33L150 47L131 62L102 46Z" fill="#668199"/><path d="M102 46V52L131 68V62Z" fill="#344d67"/><path d="M131 62V68L150 54V47Z" fill="#263d56"/><path d="M127 35L140 41L135 45L121 39Z" fill="#d1dbe4"/></g>' +
-          '<g class="movie-piece movie-shelf"><path d="M100 17L111 22V49L100 44Z" fill="#5b4839"/><path d="M111 22L118 18V45L111 49Z" fill="#3d3028"/><path d="M100 17L107 13L118 18L111 22Z" fill="#8b7257"/><path d="M102 22V29M106 24V31M110 26V33M103 35V40M108 37V43" stroke="#adc0d0" stroke-width="2"/></g>' +
-          '<g class="movie-piece movie-desk"><path d="M60 42L80 34L101 45L81 55Z" fill="#a68b68"/><path d="M63 44V60M97 46V61M80 53V69" stroke="#74899b" stroke-width="2"/><path d="M68 34V23L86 29V40Z" fill="#0d1722" stroke="#687e91" stroke-width="1.5"/><path d="M71 29L82 33M71 32L79 35" stroke="#6cabcb"/></g>' +
-          '<g class="movie-piece movie-chair"><path d="M77 53L88 58L85 69L75 64Z" fill="#dbe5eb"/><path d="M75 64L85 69L78 73L68 67Z" fill="#a2b5c5"/><path d="M78 71V79M71 78L87 80" stroke="#8a9daf" stroke-width="1.6"/></g>' +
-          '<g class="movie-piece movie-art"><path d="M128 18V31L141 37V24Z" fill="#8aa6ba"/><path d="M132 25L137 27L135 31Z" fill="#e6d8b4"/></g></g>' +
-          '<text class="movie-title" x="100" y="104" fill="#b8d1e0" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" letter-spacing="1">KWOK HO’S ROOM</text></svg>';
+          '<g class="movie-room"><g class="movie-shell">' + shell + '</g><g class="movie-piece movie-art">' + art + '</g><g class="movie-piece movie-shelf">' + shelf + '</g><g class="movie-piece movie-bed">' + bedMovie + '</g><g class="movie-piece movie-desk">' + deskMovie + '</g><g class="movie-piece movie-lamp">' + lampMovie + '</g><g class="movie-piece movie-chair">' + chairMovie + '</g><g class="movie-piece movie-table">' + tableMovie + '</g><g class="movie-piece movie-extras">' + extras + '</g></g>' +
+          '<text class="movie-title" x="100" y="110" fill="#b8d1e0" text-anchor="middle" font-family="Arial,sans-serif" font-size="5.5" letter-spacing="1">KWOK HO’S ROOM</text></svg>';
       }
 
       model = element('div', 'room-model');
@@ -164,19 +221,19 @@
         }
       }
 
-      var wood = colors('#5a483a', '#75604c', '#3d3028', ['#85684e', '#aa8963', '#604b3b'], ['#373852', '#565470', '#262941']);
-      var dark = colors('#222a33', '#35404c', '#131a21', ['#28313b', '#424c56', '#171e27'], ['#171c2c', '#2a3045', '#111525']);
-      var white = colors('#dce1e4', '#f3f5f6', '#919da7', ['#ece9df', '#fffdf4', '#b6bbc1'], ['#707e9b', '#a2b0c9', '#465872']);
-      var blue = colors('#22344b', '#344e6c', '#162334', ['#496278', '#7c93a5', '#344a62'], ['#333657', '#515b84', '#222641']);
+      var wood = colors('#5a483a', '#75604c', '#3d3028', ['#85684e', '#aa8963', '#604b3b']);
+      var dark = colors('#222a33', '#35404c', '#131a21', ['#28313b', '#424c56', '#171e27']);
+      var white = colors('#dce1e4', '#f3f5f6', '#919da7', ['#ece9df', '#fffdf4', '#b6bbc1']);
+      var blue = colors('#22344b', '#344e6c', '#162334', ['#496278', '#7c93a5', '#344a62']);
 
       // The room shell stays still while the individual furniture arrives.
       panel(world, 226, 220, -15, 465, 452, 'model-ground-shadow');
       var floor = group('floor', 0, 0, true);
       box(floor, 0, 0, -14, 400, 400, 14, wood, 'model-floor');
       var wallLeft = group('wall-left', 0, -199, true, 'model-wall-left');
-      box(wallLeft, 0, 0, 0, 405, 10, 230, colors('#2c333d', '#49515c', '#1a2028', ['#d8d5ca', '#eee6d4', '#aeaca4'], ['#525f87', '#6f7bac', '#333e60']));
+      box(wallLeft, 0, 0, 0, 405, 10, 230, colors('#2c333d', '#49515c', '#1a2028', ['#d8d5ca', '#eee6d4', '#aeaca4']));
       var wallRight = group('wall-right', 199, 0, true, 'model-wall-right');
-      box(wallRight, 0, 0, 0, 10, 400, 230, colors('#323c49', '#4d5765', '#202833', ['#cecec4', '#e5decd', '#a1a5a0'], ['#5f6a93', '#8992b7', '#3d486b']));
+      box(wallRight, 0, 0, 0, 10, 400, 230, colors('#323c49', '#4d5765', '#202833', ['#cecec4', '#e5decd', '#a1a5a0']));
       box(wallLeft, 0, 7, 0, 398, 3, 8, dark);
       box(wallRight, -7, 0, 0, 3, 398, 8, dark);
       panel(floor, 38, 45, 1, 115, 133, 'model-rug');

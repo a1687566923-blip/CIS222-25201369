@@ -14,6 +14,9 @@
     var currentNumber = document.getElementById('tour-current');
     var currentName = document.getElementById('tour-name');
     var progress = document.getElementById('tour-progress');
+    var nextControl = document.getElementById('tour-next');
+    var nextLabel = document.getElementById('tour-next-label');
+    var jumpRun = 0;
     var readingStage = tour.querySelector('.tour-interface');
     var mobileReadingStage = tour.querySelector('.tour-reading-window');
     if (!mobileReadingStage && readingStage) {
@@ -195,6 +198,13 @@
       });
       if (currentNumber) { currentNumber.textContent = ('0' + (nearest + 1)).slice(-2); }
       if (currentName) { currentName.textContent = activeChapter.getAttribute('data-name') || ''; }
+      if (nextControl) {
+        var nextIndex = (nearest + 1) % chapters.length;
+        var nextName = chapters[nextIndex].getAttribute('data-name');
+        nextControl.setAttribute('href', '#' + chapters[nextIndex].getAttribute('id'));
+        nextControl.setAttribute('aria-label', nextIndex === 0 ? 'Back to the room' : 'Next chapter: ' + nextName);
+        if (nextLabel) { nextLabel.textContent = nextIndex === 0 ? 'Back to room' : 'Next: ' + nextName; }
+      }
       if (model && model.setChapter) { model.setChapter(activeKey); }
       }
     }
@@ -684,8 +694,53 @@
     }
     window.addEventListener('load', resetBeforeShowing);
     window.addEventListener('pageshow', resetBeforeShowing);
-    stops.forEach(function (stop) { stop.addEventListener('click', finishIntro); });
-    hotspots.forEach(function (hotspot) { hotspot.addEventListener('click', finishIntro); });
+    // Chapter selection changes one camera composition directly. Native smooth
+    // scrolling would visit every chapter between 07 and 01 before arriving.
+    // Wheel reading still uses the existing continuous camera timeline.
+    function goToChapter(index, writeHistory) {
+      if (layoutDirty) { prepareStoryLayout(); }
+      if (introPlaying) { finishIntro(); }
+      var chapter = chapters[index];
+      var hash = '#' + chapter.getAttribute('id');
+      var top = storyLayout ? storyLayout.rows[index].start : chapter.getBoundingClientRect().top + window.scrollY - 32;
+      var root = document.documentElement;
+      var thisJump = ++jumpRun;
+      root.classList.add('room-chapter-jump');
+      if (writeHistory && window.location.hash !== hash) {
+        try { window.history.pushState(window.history.state, '', hash); }
+        catch (error) { window.location.hash = hash; }
+      }
+      snapPosition = true;
+      storyPosition = top;
+      storyTime = 0;
+      // auto observes the temporary CSS override in Safari as well as Chrome.
+      // It also cancels a smooth scroll already running from an earlier link.
+      window.scrollTo({ top: Math.max(0, top), left: 0, behavior: 'auto' });
+      updateTour();
+      if (!storyLayout) { activateChapter(index); paintCamera(cameraForChapter(index), index === 0 ? 0 : 1); }
+      window.requestAnimationFrame(function () {
+        if (thisJump === jumpRun) { root.classList.remove('room-chapter-jump'); }
+      });
+    }
+    function chapterLinkClick(event) {
+      if (window.roomTourFailed || event.defaultPrevented || (event.button !== undefined && event.button !== 0) ||
+          event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || this.getAttribute('target') || this.getAttribute('download') !== null) { return; }
+      var href = this.getAttribute('href');
+      var index = -1;
+      chapters.forEach(function (chapter, number) { if ('#' + chapter.getAttribute('id') === href) { index = number; } });
+      if (index < 0) { return; }
+      event.preventDefault();
+      goToChapter(index, true);
+      // A footer link can leave with its paper; keep keyboard focus visible.
+      if (document.activeElement === this && this.classList.contains('chapter-next') && nextControl) { focusWithoutScroll(nextControl); }
+    }
+    tour.querySelectorAll('a').forEach(function (link) { link.addEventListener('click', chapterLinkClick); });
+    window.addEventListener('popstate', function () {
+      if (window.roomTourFailed || introPlaying) { return; }
+      chapters.forEach(function (chapter, index) {
+        if ('#' + chapter.getAttribute('id') === window.location.hash) { goToChapter(index, false); }
+      });
+    });
     document.querySelectorAll('.motion-toggle').forEach(function (button) {
       // The shared script changes body.motion-paused before this handler runs.
       button.addEventListener('click', updateIntroAvailability);
@@ -709,6 +764,7 @@
     updateTour();
     // Hide other chapter copies only after the tour successfully starts.
     tour.classList.add('tour-enhanced');
+    if (nextControl) { nextControl.hidden = false; }
     updateIntroAvailability();
     // A direct chapter link keeps its position and skips the decorative opening.
     if (startupFromBeginning) { playIntro(true); }

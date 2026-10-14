@@ -2,7 +2,8 @@
    This stage size is also used by the camera in room-tour.js. */
 html { overflow-x: clip; }
 .room-home { --scene-paper: #fbf4e1; --panel-paper: #fcf6e7; --chapter-paper: #adcbd0; --paper: #fbf4e1; --surface: #fffaf0; --ink: #343c40; --muted: #707a7b; --line: #d8d5c680; --accent: #4c737e; background: var(--scene-paper); }
-.room-home.night { --scene-paper: #5b6ead; --panel-paper: #4e608f; --chapter-paper: #6478b0; --paper: #53689c; --surface: #6276ad; --ink: #fff4df; --muted: #e0e4ef; --line: #dedfec45; --accent: #d1e5e8; }
+.room-home.night { --scene-paper: #202735; --panel-paper: #262e3d; --chapter-paper: #3a5068; --paper: #202735; --surface: #2c3441; --ink: #f0ede5; --muted: #b7bbc0; --line: #41474d; --accent: #bdd6e3; }
+html.room-chapter-jump { scroll-behavior: auto !important; }
 
 /* Every page remains reachable from the compact Menu. */
 .room-home .scene-header { position: fixed; inset: 0 0 auto; z-index: 50; width: 100%; min-height: 0; padding: 25px 32px; border: 0; gap: 12px; pointer-events: none; }
@@ -61,6 +62,15 @@ html { overflow-x: clip; }
 .tour-stop { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; font-size: 9px; text-decoration: none; color: var(--muted); transition: background-color .25s, color .25s; }
 .tour-stop:hover { color: var(--ink); background: var(--lavender); }
 .tour-stop.is-active { background: var(--accent); color: var(--paper); }
+.tour-next-control { position: absolute; bottom: 76px; right: 26px; display: inline-flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 17px; border: 1px solid var(--line); border-radius: 24px; background: var(--panel-paper); color: var(--ink); font-size: 12px; text-decoration: none; pointer-events: auto; z-index: 6; }
+.tour-next-control:hover { background: var(--accent); color: var(--paper); }
+.tour-next-control[hidden] { display: none; }
+.tour-basic .tour-next-control { display: none; }
+@media (max-width: 760px) {
+  .tour-next-control { bottom: max(66px, calc(env(safe-area-inset-bottom) + 62px)); right: 15px; padding: 9px 14px; font-size: 11px; }
+  .tour-mobile-story[data-active-chapter='home'] .tour-next-control { display: none; }
+}
+@media (max-height: 520px) { .tour-next-control { display: none; } }
 .tour-progress-track { position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; overflow: hidden; background: var(--line); z-index: 5; }
 #tour-progress { display: block; width: 100%; height: 100%; background: var(--accent); transform: scaleX(0); transform-origin: left; }
 
@@ -301,9 +311,9 @@ html.room-opening { overflow-y: hidden; scroll-behavior: auto; }
 .room-home .theme-toggle { border-color: transparent; background: transparent; }
 .room-home .theme-switch { background: #c9a99f; border-color: transparent; }
 .room-home .theme-thumb { background: #fff6e2; }
-.room-home .theme-toggle[aria-pressed='true'] .theme-switch { background: #fff4df; }
-.room-home .theme-toggle[aria-pressed='true'] .theme-thumb { background: #5b6ead; }
-.room-home .theme-toggle[aria-pressed='true'] .theme-moon { color: #fff4df; }
+.room-home .theme-toggle[aria-pressed='true'] .theme-switch { background: #526977; }
+.room-home .theme-toggle[aria-pressed='true'] .theme-thumb { background: #fdfbf4; }
+.room-home .theme-toggle[aria-pressed='true'] .theme-moon { color: #d9e9f2; }
 .room-home .theme-toggle[aria-pressed='false'] .theme-sun { color: #343c40; }
 .js-enabled:not(.keyboard-input) .theme-toggle:focus,
 .js-enabled:not(.keyboard-input) .intro-skip:focus,

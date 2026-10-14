@@ -31,6 +31,14 @@
 .model-blue-led .face-front, .model-blue-led .face-top { box-shadow: none; }
 .model-screen { border: calc(3 * var(--model-unit)) solid #101722; background: #15212f; overflow: hidden; }
 .screen-movie { display: block; width: 100%; height: 100%; }
+.movie-material { fill: var(--movie-day); }
+.night .movie-material { fill: var(--movie-night); }
+.movie-backdrop { fill: #fbf4e1; }
+.night .movie-backdrop { fill: #202735; }
+.movie-hello, .movie-title { fill: #343c40; }
+.night .movie-hello, .night .movie-title { fill: #d8e4ec; }
+.movie-lamp-glow { opacity: 0; }
+.night .movie-lamp-glow { opacity: 1; }
 .screen-movie .movie-cube, .screen-movie .movie-room, .screen-movie .movie-piece { transform-box: fill-box; transform-origin: center; }
 .movie-cube { animation: movie-cube 9s ease-in-out infinite; }
 .movie-hello { animation: movie-greeting 9s ease-in-out infinite; }
@@ -40,6 +48,9 @@
 .movie-desk { animation-delay: .28s; }
 .movie-chair { animation-delay: .42s; }
 .movie-art { animation-delay: .56s; }
+.movie-lamp { animation-delay: .7s; }
+.movie-table { animation-delay: .84s; }
+.movie-extras { animation-delay: .98s; }
 .movie-title { animation: movie-title 9s ease-in-out infinite; }
 @keyframes movie-cube { 0% { opacity: 0; transform: scale(.1) rotate(-180deg); } 8%, 17% { opacity: 1; transform: scale(1) rotate(0); } 23%, 100% { opacity: 0; transform: scale(.1) rotate(180deg); } }
 @keyframes movie-greeting { 0%, 3% { opacity: 0; } 9%, 17% { opacity: 1; } 23%, 100% { opacity: 0; } }
@@ -85,28 +96,28 @@
 .model-lamp-pool { background: transparent; border-radius: 50%; }
 .model-wall-left > .model-cuboid:first-child > .face-front { background: radial-gradient(ellipse at 60% 60%, var(--lamp-wall), transparent 60%), var(--face-front); }
 .model-wall-right > .model-cuboid:first-child > .face-left { background: radial-gradient(ellipse at 34% 60%, var(--lamp-wall), transparent 60%), var(--face-front); }
-.night .room-model { --floor-light: #565671; --floor-mid: #424661; --floor-dark: #343b56; --duvet-light: #5b628d; --duvet-mid: #454e79; --duvet-dark: #303957; --fabric-seam: #c2bde422; --lamp-wall: #fff2cc78; --lamp-shade-edge: #e8cda3; --lamp-shade-center: #fff7d9; }
+.night .room-model { --floor-light: #806c56; --floor-mid: #725f4c; --floor-dark: #584839; --duvet-light: #617e97; --duvet-mid: #405d78; --duvet-dark: #293e57; --fabric-seam: #b8c9d32e; --lamp-wall: #fff2cc40; --lamp-shade-edge: #e8cda3; --lamp-shade-center: #fff7d9; }
 .night .model-cuboid { --face-front: var(--night-front); --face-top: var(--night-top); --face-dark: var(--night-dark); }
-.night .model-ground-shadow { background: #242b6659; }
+.night .model-ground-shadow { background: #080d1359; }
 .night .model-lamp-pool { background: radial-gradient(ellipse, #ffedc15c, #efd6a02b 36%, transparent 70%); }
 .night .model-warm-light { background: #fff0bd; }
 .night .model-lamp-halo { background: radial-gradient(circle, #fff6d938, #ffe1a51c 30%, transparent 70%); }
-.night .model-window .sky-top { stop-color: #263363; }
-.night .model-window .sky-bottom { stop-color: #627aab; }
+.night .model-window .sky-top { stop-color: #102034; }
+.night .model-window .sky-bottom { stop-color: #34526b; }
 .night .model-window .sky-orb { fill: #e4ebfc; }
-.night .model-window .city-hills { fill: #4b5e91; }
-.night .model-window .city-buildings { fill: #263856; }
+.night .model-window .city-hills { fill: #30465c; }
+.night .model-window .city-buildings { fill: #162738; }
 .model-window .city-light { fill: #d8c8a650; }
 .night .model-window .city-light { fill: #f2d89c; }
 .model-picture { border-color: #b59b78; }
-.night .model-picture { border-color: #60688f; }
+.night .model-picture { border-color: #887761; }
 .model-window { border-color: #939e9e; box-shadow: none; }
-.night .model-window { border-color: #52628c; }
+.night .model-window { border-color: #1b252f; }
 .model-window::after { background: linear-gradient(90deg, transparent 48%, #919c9f 48%, #919c9f 52%, transparent 52%), linear-gradient(0deg, transparent 47%, #919c9f 47%, #919c9f 51%, transparent 51%); }
-.night .model-window::after { background: linear-gradient(90deg, transparent 48%, #52648e 48%, #52648e 52%, transparent 52%), linear-gradient(0deg, transparent 47%, #52648e 47%, #52648e 51%, transparent 51%); }
-.night .model-rug { border-color: #303b5c; background: repeating-linear-gradient(90deg, #354360 0, #354360 calc(4 * var(--model-unit)), #3e4a69 calc(4 * var(--model-unit)), #3e4a69 calc(5 * var(--model-unit))); }
-.night .table-round-top { border-color: #6f6d88; background: radial-gradient(ellipse at 35% 40%, #635e7d, #44445f); }
-.night .table-round-edge { background: #44425f !important; }
+.night .model-window::after { background: linear-gradient(90deg, transparent 48%, #293440 48%, #293440 52%, transparent 52%), linear-gradient(0deg, transparent 47%, #293440 47%, #293440 51%, transparent 51%); }
+.night .model-rug { border-color: #393e43; background: repeating-linear-gradient(90deg, #3e464e 0, #3e464e calc(4 * var(--model-unit)), #434b54 calc(4 * var(--model-unit)), #434b54 calc(5 * var(--model-unit))); }
+.night .table-round-top { border-color: #92795c; background: radial-gradient(ellipse at 35% 40%, #8c7055, #68523d); }
+.night .table-round-edge { background: #6f543e !important; }
 .night .model-bedside-lamp .table-round-top { border-color: #ab9676; background: radial-gradient(ellipse, #e6cea1, #b49b79 50%, #74695e); }
 .night .model-bedside-lamp .table-round-edge { background: #79674f !important; }
 /* Shadows remain contact shapes on phones; no blurred layer per furniture. */
@@ -114,7 +125,7 @@
 .model-compact .model-blue-led .model-face,
 .model-compact .model-warm-light { box-shadow: none; }
 .model-compact .model-rug { background: #555c6b; }
-.night .model-compact .model-rug { background: #36435f; }
+.night .model-compact .model-rug { background: #3e464e; }
 .model-compact .model-duvet .face-top { background: linear-gradient(110deg, var(--duvet-mid), var(--duvet-light) 55%, var(--duvet-dark)); }
 .night .model-duvet .face-top { background: radial-gradient(ellipse at 0 0, #ffedc12b, transparent 60%), linear-gradient(110deg, var(--duvet-mid), var(--duvet-light) 38%, var(--duvet-dark)); }
 .room-model:not(.is-building) .model-face.rest-occluded { display: none; }
