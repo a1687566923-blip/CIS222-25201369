@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cssform.html</title>
+    <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="../coursework.css?v=20261016-audit1">
+<script src="../coursework.js?v=20261016-audit1" defer></script>
+<script src="../../navigation.js?v=20261016-audit1" data-room-page="coursework/tutorial-04/index.html" data-room-root="../../" defer></script>
+</head>
+<body class="coursework-demo tutorial-4">
+<div class="coursework-toolbar"><a href="../../projects.html#tutorial-04">← Back to projects</a><span>ZhangKwokHo · Tutorial 4<small class="coursework-course">Year 2 · Semester 1 · CIS222 — Web Design and Development · 2026</small></span><nav aria-label="Coursework navigation"><a href="../tutorial-03/website.html">← Tutorial 3</a><a href="../tutorial-05/index.html">Tutorial 5 →</a></nav></div>
+
+    <div class="form-container">
+        <h1>Student Registration Form</h1>
+        <hr>
+
+        <p class="coursework-demo-note">Coursework demo: try the form locally. No information is sent and no account is created.</p>
+<form onsubmit="return false;">
+            <div class="form-group">
+                <label for="firstname">Firstname</label>
+                <input type="text" id="firstname" name="firstname" placeholder="Firstname" required>
+            </div>
+
+            <div class="form-group">
+                <label for="middlename">Middlename:</label>
+                <input type="text" id="middlename" name="middlename" placeholder="Middlename">
+            </div>
+
+            <div class="form-group">
+                <label for="lastname">Lastname:</label>
+                <input type="text" id="lastname" name="lastname" placeholder="Lastname" required>
+            </div>
+
+            <div class="inline-group">
+                <label for="course">Course :</label>
+                <select id="course" name="course">
+                    <option value="" selected></option>
+                    <option value="CIS222 Web Design and Development">CIS222 Web Design and Development</option>
+                </select>
+            </div>
+
+            <div class="radio-group">
+                <span class="group-title">Gender :</span>
+                <label>
+                    <input type="radio" name="gender" value="Male" checked> Male
+                </label>
+                <label>
+                    <input type="radio" name="gender" value="Female"> Female
+                </label>
+                <label>
+                    <input type="radio" name="gender" value="Other"> Other
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label for="phone_number">Phone :</label>
+                <div class="phone-wrapper">
+                    <span class="phone-prefix">+852</span>
+                    <input type="text" id="phone_number" name="phone_number" placeholder="phone no.">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="address">Current Address :</label>
+                <textarea id="address" name="address" placeholder="Current Address"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="Enter Email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter Password" required>
+            </div>
+
+            <div class="form-group">
+                <label for="repassword">Re-type Password</label>
+                <input type="password" id="repassword" name="repassword" placeholder="Retype Password" required>
+            </div>
+
+            <button type="submit" class="btn-submit">Register</button>
+        <p id="demo-result" class="coursework-result" role="status" aria-live="polite"></p>
+</form>
+    </div>
+
+</body>
+</html>

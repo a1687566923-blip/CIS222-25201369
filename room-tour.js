@@ -3,21 +3,36 @@
 (function () {
   'use strict';
 
+  // Old WebViews can query nodes but do not implement NodeList.forEach.
+  function findAll(root, selector) {
+    return Array.prototype.slice.call(root.querySelectorAll(selector));
+  }
+
+  function scrollPageTo(top, left) {
+    try { window.scrollTo({ top: top, left: left || 0, behavior: 'instant' }); }
+    catch (error) {
+      try { window.scrollTo({ top: top, left: left || 0, behavior: 'auto' }); }
+      catch (legacyError) { window.scrollTo(left || 0, top); }
+    }
+  }
+
   function startRoomTour() {
     var tour = document.getElementById('room-tour');
     var room = document.getElementById('room-scene');
     if (!tour || !room) { return; }
 
-    var chapters = Array.prototype.slice.call(tour.querySelectorAll('.tour-chapter[data-chapter]'));
-    var stops = document.querySelectorAll('.tour-stop[data-chapter]');
-    var hotspots = document.querySelectorAll('.room-hotspot[data-chapter]');
+    var chapters = findAll(tour, '.tour-chapter[data-chapter]');
+    var stops = findAll(document, '.tour-stop[data-chapter]');
+    var hotspots = findAll(document, '.room-hotspot[data-chapter]');
     var currentNumber = document.getElementById('tour-current');
     var currentName = document.getElementById('tour-name');
     var progress = document.getElementById('tour-progress');
     var nextControl = document.getElementById('tour-next');
     var nextLabel = document.getElementById('tour-next-label');
     var jumpRun = 0;
+    var readingNavigation = window.roomNavigation || null;
     var readingStage = tour.querySelector('.tour-interface');
+    var viewStage = tour.querySelector('.tour-view');
     var mobileReadingStage = tour.querySelector('.tour-reading-window');
     if (!mobileReadingStage && readingStage) {
       mobileReadingStage = document.createElement('div');
@@ -39,10 +54,15 @@
     var pointerBounds = null;
     var lastChapter = -1;
     var activeKey = 'home';
+    var lastPlaybackKey = null;
     var motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
     var frameQueued = false;
+    var viewportControlsQueued = false;
+    var lastVisibleHeight = -1;
+    var lastViewportInset = -1;
     var copies = chapters.map(function (chapter) { return chapter.querySelector('.tour-copy'); });
     var storyLayout = null;
+    var pendingStoryPosition = null;
     var layoutDirty = true;
     var storyPosition = null;
     var storyTime = 0;
@@ -55,9 +75,42 @@
     var viewportPortrait = portraitViewport();
     var touchViewport = window.matchMedia('(pointer: coarse)').matches;
     var mobileStory = false;
-    var basicLayout = !window.CSS || !window.CSS.supports ||
-      !(window.CSS.supports('position', 'sticky') || window.CSS.supports('position', '-webkit-sticky')) ||
-      !window.CSS.supports('overflow', 'clip') || !window.CSS.supports('width', 'var(--room-size)');
+    var basicLayout = !window.CSS || typeof window.CSS.supports !== 'function' || !window.CSS.supports('width', 'var(--room-size)');
+    var stickySupported = !basicLayout && (window.CSS.supports('position', 'sticky') || window.CSS.supports('position', '-webkit-sticky'));
+    var fixedViewport = !basicLayout && !stickySupported;
+
+    function phoneLayout() {
+      return layoutWidth <= 760 || (touchViewport && layoutWidth <= 1024);
+    }
+
+    function phonePaperWidth() {
+      return Math.min(viewportWidth - 76, Math.max(viewportWidth * 0.72, 246), 520);
+    }
+
+    function updateViewportControls() {
+      viewportControlsQueued = false;
+      if (!readingStage || window.roomTourFailed) { return; }
+      var visual = window.visualViewport;
+      var visible = window.innerHeight;
+      // Pinch zoom is left to the browser. Only browser bars / keyboard resize
+      // the clear area; the chapter timeline and prepared 3D geometry stay put.
+      if (visual && (!visual.scale || Math.abs(visual.scale - 1) < 0.01)) { visible = Math.min(visible, visual.height); }
+      visible = Math.max(1, visible);
+      var inset = mobileStory ? Math.max(0, viewportHeight - visible) : 0;
+      if (Math.abs(visible - lastVisibleHeight) > 0.5) {
+        readingStage.style.setProperty('--visible-height', visible.toFixed(3) + 'px'); lastVisibleHeight = visible;
+      }
+      if (Math.abs(inset - lastViewportInset) > 0.5) {
+        readingStage.style.setProperty('--viewport-bottom', inset.toFixed(3) + 'px'); lastViewportInset = inset;
+      }
+    }
+
+    function requestViewportControls() {
+      if (!viewportControlsQueued && !window.roomTourFailed) {
+        viewportControlsQueued = true;
+        window.requestAnimationFrame(updateViewportControls);
+      }
+    }
 
     function portraitViewport() {
       if (window.screen && window.screen.orientation && typeof window.screen.orientation.angle === 'number') {
@@ -78,23 +131,27 @@
       try { element.focus({ preventScroll: true }); }
       catch (error) { element.focus(); }
       if (window.scrollY !== top || (window.scrollX || 0) !== left) {
-        window.scrollTo({ top: top, left: left, behavior: 'instant' });
+        scrollPageTo(top, left);
       }
     }
 
-    // Desktop: focus point in the image, zoom, then target point on the screen.
-    var views = [
-      [0.5, 0.5, 1, 0.5, 0.49],
-      [0.71, 0.28, 2.55, 0.75, 0.5],
-      [0.47, 0.29, 2.75, 0.25, 0.5],
-      [0.49, 0.65, 2.65, 0.75, 0.5],
-      [0.27, 0.34, 2.9, 0.25, 0.5],
-      [0.225, 0.65, 2.65, 0.75, 0.5],
-      [0.5, 0.5, 1, 0.25, 0.5]
-    ];
-    // A portrait phone keeps the room above the moving reading paper.
+    // Match furniture by chapter key so moving the directory cannot send the
+    // camera to the previous chapter's object. Paper side comes from the HTML.
+    var viewPresets = {
+      home: [0.5, 0.5, 1], map: [0.5, 0.5, 1],
+      about: [0.71, 0.28, 2.55], education: [0.47, 0.29, 2.75],
+      skills: [0.49, 0.65, 2.65], projects: [0.27, 0.34, 2.9],
+      experience: [0.225, 0.65, 2.65]
+    };
+    var views = chapters.map(function (chapter, index) {
+      var preset = viewPresets[chapter.getAttribute('data-chapter')] || viewPresets.home;
+      return [preset[0], preset[1], preset[2], index === 0 ? 0.5 :
+        (chapter.getAttribute('data-side') === 'right' ? 0.25 : 0.75), index === 0 ? 0.49 : 0.5];
+    });
+    // A phone keeps the furniture beside the alternating reading paper.
     // These zooms are deliberately smaller than the desktop close-ups.
-    var phoneZooms = [1, 1.55, 1.6, 1.8, 1.85, 1.7, 1];
+    var phoneZoomPresets = { home: 1, map: 1, about: 1.55, education: 1.6, skills: 1.8, projects: 1.85, experience: 1.7 };
+    var phoneZooms = chapters.map(function (chapter) { return phoneZoomPresets[chapter.getAttribute('data-chapter')] || 1; });
 
     function motionAllowed() {
       return !motionPreference.matches && !document.body.classList.contains('motion-paused');
@@ -107,8 +164,8 @@
     function roomBaseSize() {
       var width = viewportWidth, height = viewportHeight;
       if (basicLayout) { return Math.min(width * 0.85, 640); }
+      if (phoneLayout()) { return Math.min(width * 1.08, height * 0.60, 600); }
       if (height <= 520) { return Math.min(width * 0.76, 340); }
-      if (layoutWidth <= 760) { return Math.min(width * 1.08, height * 0.60, 600); }
       return Math.min(height * 0.68, width * 0.64, 900);
     }
 
@@ -155,7 +212,7 @@
       index = Math.min(index, views.length - 1);
       var width = viewportWidth;
       var height = viewportHeight;
-      if (layoutWidth > 760 && height > 520) {
+      if (!phoneLayout() && height > 520) {
         var view = views[index];
         var point = modelFocus[chapters[index].getAttribute('data-chapter')] || view;
         // These dimensions match the fixed, centered square in room-tour.css.
@@ -167,14 +224,16 @@
         var y = view[4] * height - height * 0.49 - (point[1] - 0.5) * roomSize * zoom;
         return [x, y, zoom];
       }
-      if (height <= 520 || index === 0) { return [0, 0, 1]; }
+      if (!phoneLayout() || index === 0) { return [0, 0, 1]; }
       var focus = modelFocus[chapters[index].getAttribute('data-chapter')] || views[index];
       var size = roomBaseSize();
       var phoneZoom = model ? phoneZooms[index] : Math.min(phoneZooms[index], 1254 / size);
-      // Match the same resting square used by the mobile CSS, then bring the
-      // selected furniture into the upper half without covering the text.
-      return [-(focus[0] - 0.5) * size * phoneZoom,
-        height * (0.245 - 0.5) - (focus[1] - 0.5) * size * phoneZoom, phoneZoom];
+      // Keep the furniture in the clear side of the alternating phone paper.
+      // The same measured width drives the paper and its bottom controls.
+      var gap = width - phonePaperWidth();
+      var targetX = chapters[index].getAttribute('data-side') === 'right' ? gap / 2 : width - gap / 2;
+      return [targetX - width / 2 - (focus[0] - 0.5) * size * phoneZoom,
+        -(focus[1] - 0.5) * size * phoneZoom, phoneZoom];
     }
 
     function activateChapter(nearest) {
@@ -205,8 +264,18 @@
         nextControl.setAttribute('aria-label', nextIndex === 0 ? 'Back to the room' : 'Next chapter: ' + nextName);
         if (nextLabel) { nextLabel.textContent = nextIndex === 0 ? 'Back to room' : 'Next: ' + nextName; }
       }
-      if (model && model.setChapter) { model.setChapter(activeKey); }
+      updateModelPlayback();
       }
+    }
+
+    function updateModelPlayback(force) {
+      if (!model || !model.setChapter) { return; }
+      // A fixed tour leaves the viewport when the full introduction begins.
+      // Its SVG movie must not keep painting behind an offscreen room.
+      var offscreen = storyLayout && (window.scrollY >= storyLayout.end || window.scrollY + viewportHeight <= storyLayout.top);
+      var waiting = introPlaying && introPhase !== 'assembling';
+      var key = document.visibilityState === 'hidden' || offscreen || waiting ? 'loading' : activeKey;
+      if (force || key !== lastPlaybackKey) { lastPlaybackKey = key; model.setChapter(key); }
     }
 
     function smoothStep(value) {
@@ -218,16 +287,30 @@
       if (element.style[property] !== value) { element.style[property] = value; }
     }
 
+    function setTourState(property, value) {
+      if (tour.getAttribute(property) !== value) { tour.setAttribute(property, value); }
+    }
+
     function prepareStoryLayout() {
       layoutDirty = false;
-      var story = viewportHeight > 520 && !basicLayout;
+      var story = !basicLayout && (phoneLayout() ? viewportHeight >= 320 : viewportHeight > 520);
       tour.classList.toggle('tour-basic', basicLayout);
-      mobileStory = story && layoutWidth <= 760;
+      mobileStory = story && phoneLayout();
+      // A fixed mobile stage avoids WebKit differences between overlapping
+      // sticky siblings. The document still provides all native scrolling.
+      fixedViewport = !basicLayout && (mobileStory || !stickySupported);
       tour.classList.toggle('tour-story', story);
       tour.classList.toggle('tour-mobile-story', mobileStory);
+      tour.classList.toggle('tour-fixed', story && fixedViewport);
+      if (!fixedViewport) {
+        if (viewStage) { viewStage.style.top = ''; }
+        if (readingStage) { readingStage.style.top = ''; }
+      }
       tour.style.setProperty('--tour-height', viewportHeight + 'px');
       tour.style.setProperty('--room-size', roomBaseSize().toFixed(3) + 'px');
       tour.style.setProperty('--paper-min-height', (viewportHeight * 1.25).toFixed(3) + 'px');
+      tour.style.setProperty('--phone-paper-width', phonePaperWidth().toFixed(3) + 'px');
+      updateViewportControls();
       if (displayControls && siteMenu) {
         var controlParent = mobileStory ? siteMenu : controlHome;
         if (displayControls.parentNode !== controlParent) { controlParent.appendChild(displayControls); }
@@ -238,7 +321,7 @@
         // Keep each reading paper inside the existing sticky viewport. Native
         // scrolling must not move it before the next animation frame catches up.
         if (index > 0) {
-          var parent = story ? (mobileStory ? mobileReadingStage : readingStage) : chapter;
+          var parent = story ? readingStage : chapter;
           if (copies[index].parentNode !== parent) { parent.appendChild(copies[index]); moved = true; }
           copies[index].classList.toggle('tour-paper', story);
           if (story) { copies[index].setAttribute('data-paper-side', chapter.getAttribute('data-side')); }
@@ -261,12 +344,14 @@
       snapPosition = true;
       if (!story) {
         storyLayout = null;
-        tour.setAttribute('data-transitioning', 'false');
+        pendingStoryPosition = null;
+        if (viewStage) { viewStage.style.top = ''; }
+        if (readingStage) { readingStage.style.top = ''; }
+        setTourState('data-transitioning', 'false');
         return;
       }
       var height = viewportHeight;
-      var ratio = window.devicePixelRatio || 1;
-      var readingTop = mobileStory ? Math.round(height * 0.46 * ratio) / ratio : 0;
+      var readingTop = 0;
       var frameHeight = height - readingTop;
       tour.style.setProperty('--reading-top', readingTop.toFixed(4) + 'px');
       tour.style.setProperty('--reading-height', frameHeight.toFixed(4) + 'px');
@@ -288,6 +373,13 @@
         start = row.end;
       });
       storyLayout.end = start;
+      if (pendingStoryPosition && !introPlaying) {
+        var restored = storyLayout.rows[pendingStoryPosition.index];
+        var destination = restored.start + (pendingStoryPosition.journey ? restored.reading + restored.journey * pendingStoryPosition.fraction : restored.reading * pendingStoryPosition.fraction);
+        scrollPageTo(destination, 0);
+        storyPosition = destination;
+      }
+      pendingStoryPosition = null;
     }
 
     function paintPaper(index, y, visible, rawScroll, viewportTop, reading) {
@@ -314,7 +406,7 @@
       var difference = storyPosition === null ? 0 : raw - storyPosition;
       // A small catch-up softens wheel bursts. Scrollbars, deep links and
       // jumps beyond the tour retain their native position immediately.
-      if (snapPosition || storyPosition === null || !motionAllowed() ||
+      if (snapPosition || storyPosition === null || mobileStory || !motionAllowed() ||
           Math.abs(difference) > height * 3 || raw < storyLayout.top || raw > storyLayout.end - height) {
         storyPosition = raw;
       } else {
@@ -337,35 +429,26 @@
       var outgoing = smoothStep(journey / 0.46);
       var incoming = smoothStep((journey - 0.54) / 0.46);
       var viewportTop = Math.max(storyLayout.top - raw, Math.min(0, storyLayout.end - raw - height));
-      var travelled = clamp((position - rows[0].start) / (rows[rows.length - 1].start - rows[0].start), 0, 1);
-      if (progress) { progress.style.transform = 'scaleX(' + travelled.toFixed(4) + ')'; }
-      if (!motionAllowed()) {
-        // Keep ordinary reading motion, with a direct chapter change instead
-        // of a partially entered paper or a camera stuck in the overview.
-        var selected = journey >= 0.5 ? after : before;
-        copies.forEach(function (copy, index) {
-          if (index !== selected) { setStyle(copy, 'visibility', 'hidden'); copy.classList.remove('is-visible'); }
-        });
-        var staticY = selected === 0 || selected !== before ? 0 : -(row.height - frameHeight + frameHeight * 0.22) * reading;
-        paintPaper(selected, staticY, true, raw, viewportTop, reading);
-        copies[0].style.opacity = '1';
-        activateChapter(selected);
-        tour.setAttribute('data-transitioning', 'false');
-        if (wipe) { wipe.style.transform = 'translate(-50%, -50%) scale(' + (selected === 0 ? '0' : '1') + ')'; }
-        paintCamera(cameraForChapter(selected), selected === 0 ? 0 : 1);
-        storyTime = 0;
-        return;
+      if (fixedViewport) {
+        // Sticky is optional: a fixed, clipped viewport follows the very same
+        // chapter timeline and leaves the screen at the end of the tour.
+        if (viewStage) { setStyle(viewStage, 'top', viewportTop.toFixed(3) + 'px'); }
+        if (readingStage) { setStyle(readingStage, 'top', viewportTop.toFixed(3) + 'px'); }
       }
+      var travelled = clamp((position - rows[0].start) / (rows[rows.length - 1].start - rows[0].start), 0, 1);
+      if (progress) { setStyle(progress, 'transform', 'scaleX(' + travelled.toFixed(4) + ')'); }
+      // Reading follows the visitor's own scrolling in every mode. Reduced
+      // motion still stops camera interpolation, sway and automatic animation.
       var showBefore = before === 0 ? journey < 0.46 : outgoing < 1;
       var showAfter = after !== before && journey > 0.54 && incoming > 0;
       copies.forEach(function (copy, index) {
         if ((index === before && showBefore) || (index === after && showAfter)) { return; }
         setStyle(copy, 'visibility', 'hidden');
-        copy.classList.remove('is-visible');
+        if (copy.classList.contains('is-visible')) { copy.classList.remove('is-visible'); }
       });
       if (before === 0) {
         paintPaper(0, -height * 0.18 * blend, showBefore, raw, viewportTop, reading);
-        copies[0].style.opacity = (1 - outgoing).toFixed(4);
+        setStyle(copies[0], 'opacity', (1 - outgoing).toFixed(4));
       } else {
         var endOffset = -(row.height - frameHeight + frameHeight * 0.22);
         var paperY = endOffset * reading + (-row.height - frameHeight * 0.08 - endOffset) * outgoing;
@@ -375,16 +458,17 @@
         paintPaper(after, frameHeight * (1 - incoming), incoming > 0, raw, viewportTop, 0);
       }
       activateChapter(incoming > 0 ? after : before);
-      tour.setAttribute('data-transitioning', journey > 0 && journey < 1 ? 'true' : 'false');
+      setTourState('data-transitioning', journey > 0 && journey < 1 ? 'true' : 'false');
       var opening = before === 0 ? blend : 1;
       if (wipe) {
         var circle = motionAllowed() ? opening : (activeKey === 'home' ? 0 : 1);
-        wipe.style.transform = 'translate(-50%, -50%) scale(' + circle.toFixed(4) + ')';
+        setStyle(wipe, 'transform', 'translate(-50%, -50%) scale(' + circle.toFixed(4) + ')');
       }
       var first = cameraForChapter(before);
       var second = cameraForChapter(after);
       var camera = first.map(function (value, index) { return value + (second[index] - value) * blend; });
       paintCamera(camera, opening);
+      updateModelPlayback();
       if (storyPosition !== raw) { requestTourUpdate(); }
       else { storyTime = 0; }
     }
@@ -411,12 +495,12 @@
 
       var distance = centers[centers.length - 1] - centers[0];
       var travelled = distance > 0 ? clamp((viewportCenter - centers[0]) / distance, 0, 1) : 0;
-      if (progress) { progress.style.transform = 'scaleX(' + travelled.toFixed(4) + ')'; }
+      if (progress) { setStyle(progress, 'transform', 'scaleX(' + travelled.toFixed(4) + ')'); }
       var openingDistance = centers.length > 1 ? centers[1] - centers[0] : 1;
       var openingProgress = clamp((viewportCenter - centers[0]) / openingDistance, 0, 1);
       if (wipe) {
         var circle = motionAllowed() ? openingProgress : (nearest === 0 ? 0 : 1);
-        wipe.style.transform = 'translate(-50%, -50%) scale(' + circle.toFixed(4) + ')';
+        setStyle(wipe, 'transform', 'translate(-50%, -50%) scale(' + circle.toFixed(4) + ')');
       }
       // Find the two section centers around the viewport and blend their views.
       var before = 0;
@@ -439,6 +523,7 @@
       var second = cameraForChapter(after);
       var camera = first.map(function (value, index) { return value + (second[index] - value) * blend; });
       paintCamera(camera, openingProgress);
+      updateModelPlayback();
     }
 
     function paintCamera(camera, openingProgress) {
@@ -483,7 +568,15 @@
       var widthChanged = Math.abs(width - viewportWidth) > 1 || modeChanged;
       var orientationChanged = portraitViewport() !== viewportPortrait;
       var ratioChanged = Math.abs((window.devicePixelRatio || 1) - viewportPixelRatio) > 0.01;
-      if (touchViewport && !widthChanged && !orientationChanged && !ratioChanged) { return; }
+      if (touchViewport && phoneLayout() && !widthChanged && !orientationChanged && !ratioChanged) { requestViewportControls(); return; }
+      if (storyLayout && !introPlaying && window.scrollY >= storyLayout.top && window.scrollY < storyLayout.end) {
+        var currentRow = 0;
+        storyLayout.rows.forEach(function (row, index) { if (window.scrollY >= row.start) { currentRow = index; } });
+        var row = storyLayout.rows[currentRow];
+        var offset = Math.max(0, window.scrollY - row.start);
+        pendingStoryPosition = { index: currentRow, journey: offset > row.reading,
+          fraction: offset > row.reading ? (offset - row.reading) / row.journey : offset / row.reading };
+      }
       viewportWidth = width;
       layoutWidth = window.innerWidth;
       viewportHeight = window.innerHeight;
@@ -494,6 +587,9 @@
       requestTourUpdate();
     });
     window.addEventListener('hashchange', function () { snapPosition = true; requestTourUpdate(); });
+    if (window.visualViewport && window.visualViewport.addEventListener) {
+      window.visualViewport.addEventListener('resize', requestViewportControls, { passive: true });
+    }
     // Pointer motion updates only the view and its six projected links. It
     // never recalculates chapter geometry, camera size or the whole tour.
     function renderHover(time) {
@@ -553,7 +649,7 @@
         try { window.history.replaceState(window.history.state, '', window.location.href.split('#')[0]); }
         catch (error) { /* The early reset still prevents native position restoration. */ }
       }
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      scrollPageTo(0, 0);
       storyPosition = 0;
       storyTime = 0;
       snapPosition = true;
@@ -588,7 +684,7 @@
         }
       }
       if (enterButton) { enterButton.hidden = true; }
-      if (model && model.setChapter) { model.setChapter(activeKey); }
+      updateModelPlayback();
     }
 
     function playIntro(autoFocus) {
@@ -613,7 +709,7 @@
       document.documentElement.classList.remove('room-booting');
       introBackgrounds.forEach(function (element) { if (element) { element.setAttribute('inert', ''); } });
       focusWithoutScroll(skipButton);
-      if (model && model.setChapter) { model.setChapter('loading'); }
+      updateModelPlayback();
       // This is preparation-sequence progress, not a claimed download percentage.
       var ticks = motionAllowed() ? 18 : 3;
       var tick = 0;
@@ -642,7 +738,7 @@
       introScreen.classList.add('is-leaving');
       document.body.classList.remove('intro-running');
       document.body.classList.add('intro-finishing');
-      if (model) { model.setChapter('home'); model.replay(); }
+      if (model) { updateModelPlayback(); model.replay(); }
       if (arrival) { arrival.classList.add('is-arriving'); }
       finishTimer = window.setTimeout(function () {
         if (thisRun !== introRun) { return; }
@@ -697,25 +793,32 @@
     // Chapter selection changes one camera composition directly. Native smooth
     // scrolling would visit every chapter between 07 and 01 before arriving.
     // Wheel reading still uses the existing continuous camera timeline.
-    function goToChapter(index, writeHistory) {
+    function goToChapter(index, writeHistory, bookmark) {
       if (layoutDirty) { prepareStoryLayout(); }
       if (introPlaying) { finishIntro(); }
       var chapter = chapters[index];
       var hash = '#' + chapter.getAttribute('id');
       var top = storyLayout ? storyLayout.rows[index].start : chapter.getBoundingClientRect().top + window.scrollY - 32;
+      if (bookmark) {
+        if (storyLayout) {
+          var returnRow = storyLayout.rows[index];
+          top += bookmark.phase === 'travel' ? returnRow.reading + returnRow.journey * bookmark.fraction : returnRow.reading * bookmark.fraction;
+        } else { top += Math.max(0, chapter.getBoundingClientRect().height - viewportHeight) * bookmark.fraction; }
+      }
       var root = document.documentElement;
       var thisJump = ++jumpRun;
       root.classList.add('room-chapter-jump');
       if (writeHistory && window.location.hash !== hash) {
-        try { window.history.pushState(window.history.state, '', hash); }
-        catch (error) { window.location.hash = hash; }
+        try { window.history.pushState(readingNavigation ? readingNavigation.chapterHistoryState() : window.history.state, '', hash); }
+        catch (error) { /* Keep direct navigation; assigning hash here would start another native anchor scroll. */ }
       }
       snapPosition = true;
       storyPosition = top;
       storyTime = 0;
-      // auto observes the temporary CSS override in Safari as well as Chrome.
-      // It also cancels a smooth scroll already running from an earlier link.
-      window.scrollTo({ top: Math.max(0, top), left: 0, behavior: 'auto' });
+      // Explicit instant scrolling cancels any previous native smooth scroll.
+      // The homepage also permanently disables CSS smooth anchor navigation;
+      // browsers without the instant enum can safely use the auto fallback.
+      scrollPageTo(Math.max(0, top), 0);
       updateTour();
       if (!storyLayout) { activateChapter(index); paintCamera(cameraForChapter(index), index === 0 ? 0 : 1); }
       window.requestAnimationFrame(function () {
@@ -734,30 +837,79 @@
       // A footer link can leave with its paper; keep keyboard focus visible.
       if (document.activeElement === this && this.classList.contains('chapter-next') && nextControl) { focusWithoutScroll(nextControl); }
     }
-    tour.querySelectorAll('a').forEach(function (link) { link.addEventListener('click', chapterLinkClick); });
+    findAll(tour, 'a').forEach(function (link) { link.addEventListener('click', chapterLinkClick); });
     window.addEventListener('popstate', function () {
       if (window.roomTourFailed || introPlaying) { return; }
+      if (readingNavigation && readingNavigation.restoreHistory()) { return; }
       chapters.forEach(function (chapter, index) {
         if ('#' + chapter.getAttribute('id') === window.location.hash) { goToChapter(index, false); }
       });
     });
-    document.querySelectorAll('.motion-toggle').forEach(function (button) {
+    findAll(document, '.motion-toggle').forEach(function (button) {
       // The shared script changes body.motion-paused before this handler runs.
       button.addEventListener('click', updateIntroAvailability);
     });
     watchMotion(updateIntroAvailability);
 
+    function captureReadingPosition() {
+      if (introPlaying || window.roomTourFailed) { return null; }
+      if (layoutDirty) { prepareStoryLayout(); }
+      var paused = document.body.classList.contains('motion-paused');
+      var profile = document.getElementById('about');
+      if (profile && typeof profile.getBoundingClientRect === 'function') {
+        var profileTop = profile.getBoundingClientRect().top + window.scrollY;
+        if (window.scrollY >= profileTop - 1) {
+          return { key: 'profile', phase: 'page', fraction: clamp((window.scrollY - profileTop) / Math.max(profile.scrollHeight || 0, viewportHeight), 0, 1), paused: paused };
+        }
+      }
+      if (storyLayout) {
+        var position = storyPosition === null ? window.scrollY : storyPosition;
+        var index = 0;
+        storyLayout.rows.forEach(function (row, number) { if (position >= row.start) { index = number; } });
+        var row = storyLayout.rows[index];
+        var travel = position > row.start + row.reading;
+        return { key: chapters[index].getAttribute('data-chapter'), phase: travel ? 'travel' : 'read',
+          fraction: clamp((position - row.start - (travel ? row.reading : 0)) / (travel ? row.journey : row.reading), 0, 1), paused: paused };
+      }
+      var chapterIndex = Math.max(0, lastChapter);
+      var rectangle = chapters[chapterIndex].getBoundingClientRect();
+      return { key: chapters[chapterIndex].getAttribute('data-chapter'), phase: 'read', fraction: clamp(-rectangle.top / Math.max(1, rectangle.height - viewportHeight), 0, 1), paused: paused };
+    }
+    function restoreReadingPosition(bookmark) {
+      if (window.roomTourFailed) { return false; }
+      var pause = document.querySelector('.motion-toggle');
+      if (pause && !pause.disabled && document.body.classList.contains('motion-paused') !== bookmark.paused) { pause.click(); }
+      if (bookmark.key === 'profile') {
+        var profile = document.getElementById('about');
+        if (!profile || typeof profile.getBoundingClientRect !== 'function') { return false; }
+        if (layoutDirty) { prepareStoryLayout(); }
+        if (introPlaying) { finishIntro(); }
+        var top = profile.getBoundingClientRect().top + window.scrollY + bookmark.fraction * Math.max(profile.scrollHeight || 0, viewportHeight);
+        snapPosition = true; storyPosition = top; storyTime = 0;
+        scrollPageTo(top, 0); updateTour(); return true;
+      }
+      var index = -1;
+      chapters.forEach(function (chapter, number) { if (chapter.getAttribute('data-chapter') === bookmark.key) { index = number; } });
+      if (index < 0) { return false; }
+      goToChapter(index, false, bookmark);
+      return true;
+    }
+    if (readingNavigation) { readingNavigation.registerTour({ capture: captureReadingPosition, restore: restoreReadingPosition }); }
+
     document.addEventListener('visibilitychange', function () {
-      if (model && model.setChapter) { model.setChapter(activeKey); }
+      updateModelPlayback(true);
     });
     if (model) { model.setView(0, 0); model.layout(roomBaseSize(), 1); readModelAnchors(true); }
     prepareStoryLayout();
+    var resumePosition = !startupFromBeginning && readingNavigation ? readingNavigation.takeResume() : null;
+    var resumed = resumePosition && restoreReadingPosition(resumePosition);
+    if (resumed) { readingNavigation.finishResume(resumePosition); }
     if (startupFromBeginning) { resetStartupPosition(true); }
     // Fresh deep links still work; refresh explicitly starts from the loading bar.
-    if (!startupFromBeginning && storyLayout && window.location.hash) {
-      chapters.forEach(function (chapter) {
-        if ('#' + chapter.getAttribute('id') === window.location.hash && chapter.scrollIntoView) {
-          chapter.scrollIntoView({ block: 'start', behavior: 'instant' });
+    if (!startupFromBeginning && !resumed && storyLayout && window.location.hash) {
+      chapters.forEach(function (chapter, index) {
+        if ('#' + chapter.getAttribute('id') === window.location.hash) {
+          scrollPageTo(storyLayout.rows[index].start, 0);
         }
       });
     }
@@ -769,6 +921,7 @@
     // A direct chapter link keeps its position and skips the decorative opening.
     if (startupFromBeginning) { playIntro(true); }
     if (window.roomStartup) { window.roomStartup.ready = true; }
+    document.documentElement.classList.remove('room-returning');
     if (window.roomStartup && window.roomStartup.guardTimer) { window.clearTimeout(window.roomStartup.guardTimer); }
   }
 
@@ -778,18 +931,22 @@
       // A partial upload or unsupported enhancement must not lock the visitor
       // inside the welcome dialog. Restore the actual HTML, with its links.
       window.roomTourFailed = true;
-      document.documentElement.classList.remove('room-booting', 'room-opening');
+      document.documentElement.classList.remove('room-booting', 'room-opening', 'room-returning');
       document.body.classList.remove('intro-running', 'intro-finishing');
-      document.querySelectorAll('[inert]').forEach(function (item) { item.removeAttribute('inert'); });
+      findAll(document, '[inert]').forEach(function (item) { item.removeAttribute('inert'); });
       var screen = document.getElementById('intro-screen');
       if (screen) { screen.hidden = true; }
       var tour = document.getElementById('room-tour');
       if (tour) {
-        tour.classList.remove('tour-story', 'tour-mobile-story', 'tour-enhanced');
+        tour.classList.remove('tour-story', 'tour-mobile-story', 'tour-enhanced', 'tour-fixed');
+        var failedView = tour.querySelector('.tour-view');
+        var failedInterface = tour.querySelector('.tour-interface');
+        if (failedView) { failedView.style.top = ''; }
+        if (failedInterface) { failedInterface.style.top = ''; }
         tour.classList.add('tour-basic');
         var base = Math.min((document.documentElement.clientWidth || window.innerWidth) * 0.85, 640);
         tour.style.setProperty('--room-size', base.toFixed(3) + 'px');
-        tour.querySelectorAll('.tour-chapter').forEach(function (chapter) {
+        findAll(tour, '.tour-chapter').forEach(function (chapter) {
           var title = document.getElementById(chapter.getAttribute('aria-labelledby'));
           var copy = title && title.parentNode;
           if (copy && copy.classList.contains('tour-copy')) {
@@ -807,7 +964,7 @@
         if (window.roomModel) {
           window.roomModel.reset(); window.roomModel.layout(base, 1);
           var positions = window.roomModel.projectAnchors ? window.roomModel.projectAnchors() : {};
-          tour.querySelectorAll('.room-hotspot[data-chapter]').forEach(function (link) {
+          findAll(tour, '.room-hotspot[data-chapter]').forEach(function (link) {
             var point = positions[link.getAttribute('data-chapter')];
             if (point) { link.style.transform = 'translate3d(' + ((point[0] - 0.5) * base).toFixed(3) + 'px, ' + ((point[1] - 0.5) * base).toFixed(3) + 'px, 0) translate(-50%, -50%)'; }
           });

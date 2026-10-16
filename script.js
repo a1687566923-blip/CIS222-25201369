@@ -3,6 +3,11 @@
 (function () {
   'use strict';
 
+  // Old WebViews can query nodes but do not implement NodeList.forEach.
+  function findAll(root, selector) {
+    return Array.prototype.slice.call(root.querySelectorAll(selector));
+  }
+
   function startPortfolio() {
     document.body.classList.add('js-enabled');
     // Touch and programmatic focus stay quiet; keyboard focus remains visible.
@@ -25,7 +30,7 @@
       menuButton.addEventListener('click', function () {
         setMenuOpen(menuButton.getAttribute('aria-expanded') !== 'true');
       });
-      navigation.querySelectorAll('a').forEach(function (link) {
+      findAll(navigation, 'a').forEach(function (link) {
         link.addEventListener('click', function () { setMenuOpen(false); });
       });
       document.addEventListener('keydown', function (event) {
@@ -69,7 +74,7 @@
     var motionPaused = motionPreference.matches;
     var room = document.getElementById('room-scene');
     var roomTour = document.getElementById('room-tour');
-    var reveals = document.querySelectorAll('[data-reveal]');
+    var reveals = findAll(document, '[data-reveal]');
     var revealObserver;
     var frameQueued = false;
 
@@ -96,7 +101,7 @@
       if (motionButton) {
         motionButton.setAttribute('aria-pressed', String(motionPaused));
         motionButton.disabled = motionPreference.matches;
-        motionButton.title = motionPreference.matches ? 'Your device requests reduced motion.' : 'Pause or resume movement';
+        motionButton.title = motionPreference.matches ? 'Your device requests reduced motion.' : 'Pause or resume room movement; screen playback and scrolling remain available';
         var label = motionButton.querySelector('.motion-label');
         if (label) { label.textContent = motionPaused ? 'Motion off' : 'Motion on'; }
       }
@@ -145,7 +150,7 @@
     var roomMessage = document.getElementById('room-message');
     if (roomMessage) {
       var defaultMessage = roomMessage.textContent;
-      document.querySelectorAll('.room-hotspot').forEach(function (link) {
+      findAll(document, '.room-hotspot').forEach(function (link) {
         function describeLink() {
           roomMessage.textContent = link.getAttribute('data-caption') || defaultMessage;
         }
@@ -160,7 +165,7 @@
     }
 
     // 5. Expand details. Without JavaScript, their content stays visible.
-    document.querySelectorAll('[data-disclosure]').forEach(function (button) {
+    findAll(document, '[data-disclosure]').forEach(function (button) {
       var panel = document.getElementById(button.getAttribute('aria-controls'));
       if (!panel) { return; }
       function setExpanded(open) {
@@ -177,13 +182,14 @@
     });
 
     // 6. Filter coursework by category; all projects start visible in HTML.
-    var projects = document.querySelectorAll('.project-entry');
-    var filterButtons = document.querySelectorAll('[data-filter]');
+    var projects = findAll(document, '.project-entry');
+    var filterButtons = findAll(document, '[data-filter]');
     var projectCount = document.getElementById('project-count');
     function filterProjects(category) {
       var visible = 0;
       projects.forEach(function (project) {
-        var matches = category === 'all' || project.getAttribute('data-category') === category;
+        var categories = ' ' + (project.getAttribute('data-category') || '').replace(/\s+/g, ' ') + ' ';
+        var matches = category === 'all' || categories.indexOf(' ' + category + ' ') !== -1;
         project.hidden = !matches;
         if (matches) { visible += 1; }
       });

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Registration - NexGen Tech Solutions</title>
+  <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="../coursework.css?v=20261016-audit1">
+<script src="../coursework.js?v=20261016-audit1" defer></script>
+<script src="../../navigation.js?v=20261016-audit1" data-room-page="coursework/tutorial-05/register.html" data-room-root="../../" defer></script>
+</head>
+<body class="coursework-demo tutorial-5">
+<div class="coursework-toolbar"><a href="../../projects.html#tutorial-05">← Back to projects</a><span>ZhangKwokHo · Tutorial 5<small class="coursework-course">Year 2 · Semester 1 · CIS222 — Web Design and Development · 2026</small></span><nav aria-label="Coursework navigation"><a href="../tutorial-04/index.html">← Tutorial 4</a></nav></div>
+
+  <!-- Navigation Bar -->
+  <header class="header">
+    <div class="logo">NexGen<span>Tech</span></div>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#about">About Us</a></li>
+        <li><a href="index.html#services">Services</a></li>
+        <li><a href="register.html" class="nav-btn active">Register</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Registration Form Wrapper -->
+  <main class="form-wrapper">
+    <div class="form-card">
+      <div class="form-header">
+        <h1>Create an Account</h1>
+        <p>Join NexGen Tech today to access our enterprise developer tools and cloud services.</p>
+      </div>
+
+      <p class="coursework-demo-note">Coursework demo: try the form locally. No information is sent and no account is created.</p>
+<form onsubmit="return false;" class="register-form">
+        <!-- Username Field -->
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" placeholder="Enter your username" required>
+        </div>
+
+        <!-- Email Field -->
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="example@domain.com" required>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="At least 8 characters" required>
+        </div>
+
+        <!-- Account Type Selection -->
+        <div class="form-group">
+          <label for="account-type">Account Type</label>
+          <select id="account-type" name="account_type" required>
+            <option value="" disabled selected>Select account type</option>
+            <option value="individual">Individual Developer</option>
+            <option value="corporate">Corporate / Business</option>
+            <option value="student">Academic / Student</option>
+          </select>
+        </div>
+
+        <!-- Terms and Conditions Checkbox -->
+        <div class="form-group-checkbox">
+          <input type="checkbox" id="terms" name="terms" required>
+          <label for="terms">I agree to the <span>Terms of Service</span> and Privacy Policy.</label>
+        </div>
+
+        <!-- Form Action Buttons -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn-submit">Complete Registration</button>
+          <button type="reset" class="btn btn-reset">Clear Form</button>
+        </div>
+      <p id="demo-result" class="coursework-result" role="status" aria-live="polite"></p>
+</form>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2026 NexGen Tech Solutions Inc. All Rights Reserved.</p>
+      <div class="footer-links">
+        <span>Privacy Policy</span>
+        <span>Terms of Service</span>
+        <span>Security</span>
+        <span>System Status</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

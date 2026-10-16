@@ -21,7 +21,8 @@
       var lastZoom = 0;
       var viewYaw = 0;
       var viewTilt = 0;
-      var compactModel = (window.innerWidth || 1024) <= 760;
+      var modelWidth = window.innerWidth || 1024;
+      var compactModel = modelWidth <= 760 || (modelWidth <= 1024 && window.matchMedia('(pointer: coarse)').matches);
       var renderDensity = compactModel ? 1.75 : 3;
       var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
       var bedsideLight = { x: 42, y: -65, z: 92 };
@@ -57,8 +58,8 @@
       }
       function lamplight(color, x, y, z) {
         var distance = Math.sqrt(Math.pow(x - bedsideLight.x, 2) + Math.pow(y - bedsideLight.y, 2) + Math.pow(z - bedsideLight.z, 2));
-        var falloff = Math.max(0, 1 - distance / 235);
-        return tint(color, '#ffedc1', 0.58 * falloff * falloff);
+        var falloff = Math.max(0, 1 - distance / 210);
+        return tint(color, '#ffedc1', 0.82 * falloff * falloff);
       }
 
       // A small vector movie on the monitor: greeting cube, room assembly,
@@ -111,7 +112,8 @@
         deskMovie += solid(-105, -119, 84, 146, 68, 6, wood) + solid(-85, -124, 90, 39, 24, 3, dark) +
           solid(-85, -128, 93, 5, 6, 14, dark) + solid(-85, -128, 107, 87, 7, 51, dark) +
           wallGraphic(-128, -124, 154, 81, 44, 'left', '<rect width="81" height="44" fill="#0d1722"/><path d="M8 12H34M8 21H24M8 30H39" stroke="#9cbfcc" stroke-width="2"/>') +
-          solid(-104, -103, 91, 51, 17, 3, dark) + solid(-65, -102, 91, 11, 18, 6, dark) +
+          solid(-104, -103, 91, 51, 17, 3, dark) +
+          surface([point(-70, -102, 92), point(-68, -110, 92), point(-62, -110, 92), point(-60, -102, 92), point(-62, -94, 92), point(-68, -94, 92)], '#222a33', '#222a33') +
           wallGraphic(-165, -130, 139, 30, 47, 'left', '<path d="M3 42V19C3 -4 27 -4 27 19V42" fill="none" stroke="#222a33" stroke-width="7"/>');
         var chairMovie = solid(-82, -26, 9, 5, 5, 34, colors('#89949e')) + solid(-82, -26, 42, 45, 45, 7, dark) +
           solid(-82, -26, 49, 41, 41, 3, white) + solid(-82, -3, 49, 45, 9, 63, white) + solid(-82, -4, 106, 27, 10, 11, dark);
@@ -126,10 +128,10 @@
         tableMovie += roundSurface(-62, 54, 32, 40) + solid(-62, 50, 33, 29, 17, 5, dark) + solid(-78, 66, 33, 17, 25, 3.2, colors('#8295a5', '#9aabb8', '#516576'));
         var extras = solid(-168, -81, 2, 50, 30, 25, colors('#283f55', '#3c5870', '#172838')) + solid(-168, -81, 31, 23, 3, 3, dark) +
           surface([point(-197, -22, 1), point(-156, -22, 1), point(-156, 32, 1), point(-197, 32, 1)], '#ddd6bb', '#ddd6bb');
-        return '<svg class="screen-movie" data-room-version="20261015-dark-nav1" viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg">' +
+        return '<svg class="screen-movie" data-room-version="20261016-coursework1" viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg">' +
           '<defs><radialGradient id="movie-lamplight"><stop stop-color="#ffedc1" stop-opacity=".7"/><stop offset="1" stop-color="#ffedc1" stop-opacity="0"/></radialGradient></defs><rect class="movie-backdrop" width="200" height="112" fill="#202735"/>' +
           '<g class="movie-cube"><path d="M34 44L47 37L60 44L47 52Z" fill="#b6d4e4"/><path d="M34 44V59L47 67V52Z" fill="#739eb8"/><path d="M47 52V67L60 59V44Z" fill="#486c87"/></g>' +
-          '<text class="movie-hello" x="69" y="57" fill="#d8e4ec" font-family="Arial,sans-serif" font-size="7">Hi, I’m Kwok Ho.</text>' +
+          '<text class="movie-hello" x="69" y="57" fill="#d8e4ec" font-family="Arial,sans-serif" font-size="7">Hi, I’m ZhangKwokHo.</text>' +
           '<g class="movie-room"><g class="movie-shell">' + shell + '</g><g class="movie-piece movie-art">' + art + '</g><g class="movie-piece movie-shelf">' + shelf + '</g><g class="movie-piece movie-bed">' + bedMovie + '</g><g class="movie-piece movie-desk">' + deskMovie + '</g><g class="movie-piece movie-lamp">' + lampMovie + '</g><g class="movie-piece movie-chair">' + chairMovie + '</g><g class="movie-piece movie-table">' + tableMovie + '</g><g class="movie-piece movie-extras">' + extras + '</g></g>' +
           '<text class="movie-title" x="100" y="110" fill="#b8d1e0" text-anchor="middle" font-family="Arial,sans-serif" font-size="5.5" letter-spacing="1">KWOK HO’S ROOM</text></svg>';
       }
@@ -269,8 +271,12 @@
       var keyboard = group('keyboard', -104, -103);
       box(keyboard, 0, 0, 91, 51, 17, 3, dark, 'model-keyboard');
       var mouse = group('mouse', -65, -102);
-      box(mouse, 0, 0, 91, 11, 18, 6, dark, 'model-mouse');
-      box(mouse, 0, -3, 97, 1.3, 5, 0.8, colors('#8993a0'), 'mouse-wheel');
+      // The curved shell sits directly on the 90-high desktop. Stacked thin
+      // oval surfaces replace the old six-high rectangular block underneath.
+      panel(mouse, 0, 0, 90.4, 11, 18, 'model-mouse mouse-base');
+      panel(mouse, 0, -0.2, 91.4, 10.6, 17.6, 'model-mouse mouse-shell');
+      panel(mouse, 0, -0.4, 92.2, 9.8, 16.8, 'model-mouse mouse-crown');
+      panel(mouse, 0, -4, 92.5, 1.2, 4, 'mouse-wheel');
       var headphones = group('headphones', -150, -130);
       box(headphones, 0, 0, 90, 23, 19, 2, dark);
       box(headphones, 0, 0, 92, 3, 3, 41, colors('#74808e'));
@@ -354,7 +360,7 @@
       }
       panel(lamp, 0, 0, 102, 18, 18, 'model-lamp-cap');
       panel(lamp, 0, 0, 82.8, 31, 31, 'model-warm-light');
-      panel(lamp, 0, 0, 92, 62, 62, 'model-lamp-halo', 45, -58);
+      panel(lamp, 0, 0, 92, 98, 98, 'model-lamp-halo', 45, -58);
       var bag = group('gymbag', -168, -81);
       shadow(-168, -81, 59, 35);
       box(bag, 0, 0, 2, 50, 30, 25, colors('#283f55', '#3c5870', '#172838'), 'model-bag');
@@ -432,7 +438,9 @@
       }
       function setChapter(key) {
         var visible = document.visibilityState !== 'hidden';
-        model.classList.toggle('screen-active', visible && (key === 'home' || key === 'projects'));
+        // The monitor is a playing screen, independent of camera movement.
+        // Keep its greeting -> room assembly movie alive in every chapter.
+        model.classList.toggle('screen-active', visible && key !== 'loading');
         model.classList.toggle('art-active', visible && (key === 'home' || key === 'about'));
       }
       function reset() {

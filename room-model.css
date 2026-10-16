@@ -74,6 +74,11 @@
 .screen-line.line-three { top: 79%; width: 18%; background: #527b90; }
 .model-keyboard .face-top { border: calc(2 * var(--model-unit)) solid #202834; background: repeating-linear-gradient(90deg, transparent 0, transparent calc(4 * var(--model-unit)), #8196a24d calc(4 * var(--model-unit)), #8196a24d calc(4.7 * var(--model-unit))), repeating-linear-gradient(0deg, #273240 0, #273240 calc(4 * var(--model-unit)), #809dac5c calc(4 * var(--model-unit)), #809dac5c calc(4.5 * var(--model-unit))); }
 .model-mouse .face-top { border-radius: 45% 45% 35% 35%; background: linear-gradient(90deg, #19232e, #374351 50%, #202b36); }
+.model-mouse.model-panel { border-radius: 46% 46% 40% 40%; }
+.mouse-base { background: #111922; }
+.mouse-shell { background: linear-gradient(90deg, #17212b, #303d49, #18222c); }
+.mouse-crown { background: linear-gradient(90deg, #202b36, #3a4753 50%, #27333f); border-top: calc(.35 * var(--model-unit)) solid #53616c; }
+.mouse-wheel { border-radius: 40%; background: #87929b; }
 .model-window { border: calc(7 * var(--model-unit)) solid #1b252f; box-shadow: 0 0 calc(12 * var(--model-unit)) #609dca2d; background: #183148; }
 .model-window::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 48%, #293440 48%, #293440 52%, transparent 52%), linear-gradient(0deg, transparent 47%, #293440 47%, #293440 51%, transparent 51%); }
 .model-picture { border: calc(5 * var(--model-unit)) solid #887761; background: #536c7e; }
@@ -96,12 +101,12 @@
 .model-lamp-pool { background: transparent; border-radius: 50%; }
 .model-wall-left > .model-cuboid:first-child > .face-front { background: radial-gradient(ellipse at 60% 60%, var(--lamp-wall), transparent 60%), var(--face-front); }
 .model-wall-right > .model-cuboid:first-child > .face-left { background: radial-gradient(ellipse at 34% 60%, var(--lamp-wall), transparent 60%), var(--face-front); }
-.night .room-model { --floor-light: #806c56; --floor-mid: #725f4c; --floor-dark: #584839; --duvet-light: #617e97; --duvet-mid: #405d78; --duvet-dark: #293e57; --fabric-seam: #b8c9d32e; --lamp-wall: #fff2cc40; --lamp-shade-edge: #e8cda3; --lamp-shade-center: #fff7d9; }
+.night .room-model { --floor-light: #806c56; --floor-mid: #725f4c; --floor-dark: #584839; --duvet-light: #617e97; --duvet-mid: #405d78; --duvet-dark: #293e57; --fabric-seam: #b8c9d32e; --lamp-wall: #fff2cc78; --lamp-shade-edge: #ebcd91; --lamp-shade-center: #fff9dc; }
 .night .model-cuboid { --face-front: var(--night-front); --face-top: var(--night-top); --face-dark: var(--night-dark); }
 .night .model-ground-shadow { background: #080d1359; }
-.night .model-lamp-pool { background: radial-gradient(ellipse, #ffedc15c, #efd6a02b 36%, transparent 70%); }
+.night .model-lamp-pool { background: radial-gradient(ellipse, #ffedc180, #efd6a045 36%, transparent 70%); }
 .night .model-warm-light { background: #fff0bd; }
-.night .model-lamp-halo { background: radial-gradient(circle, #fff6d938, #ffe1a51c 30%, transparent 70%); }
+.night .model-lamp-halo { background: radial-gradient(circle, #fff6d980, #ffe1a53d 28%, transparent 68%); }
 .night .model-window .sky-top { stop-color: #102034; }
 .night .model-window .sky-bottom { stop-color: #34526b; }
 .night .model-window .sky-orb { fill: #e4ebfc; }
@@ -140,9 +145,7 @@
   to { transform: translateZ(0) rotateZ(0deg) scale(1); }
 }
 .motion-paused .room-model .model-group { animation: none !important; transform: none !important; }
-.motion-paused .screen-movie *, .motion-paused .wall-art * { animation: none !important; }
-.motion-paused .movie-cube, .motion-paused .movie-hello { opacity: 0; }
-.motion-paused .movie-room, .motion-paused .movie-piece, .motion-paused .movie-title { opacity: 1; transform: none; }
+.motion-paused .wall-art * { animation: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .room-model .model-group { animation: none !important; transform: none !important; }
   .screen-movie *, .wall-art * { animation: none !important; }

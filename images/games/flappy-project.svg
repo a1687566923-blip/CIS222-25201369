@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640" role="img" aria-labelledby="title desc">
+<title id="title">Flappy Bird individual project</title><desc id="desc">Project cover showing its Blueprint structure. This is not a gameplay screenshot.</desc>
+<rect width="960" height="640" fill="#202a37"/><path d="M0 80H960M0 160H960M0 240H960M0 320H960M0 400H960M0 480H960M0 560H960M80 0V640M160 0V640M240 0V640M320 0V640M400 0V640M480 0V640M560 0V640M640 0V640M720 0V640M800 0V640M880 0V640" stroke="#a9c6d6" stroke-opacity=".035"/>
+<g font-family="Arial,sans-serif"><text x="70" y="94" fill="#a5c6d9" font-size="18" letter-spacing="3">CIS243 / INDIVIDUAL ASSIGNMENT</text>
+<text x="66" y="210" fill="#f0ede5" font-size="82" font-weight="600">Flappy Bird</text><text x="71" y="255" fill="#b8c0c8" font-size="22">Year 1 · Semester 2</text>
+<path d="M246 420H360M550 420H664" fill="none" stroke="#88b6c8" stroke-width="3"/>
+<g fill="#2c3e4d" stroke="#8cabbc"><rect x="70" y="350" width="200" height="142" rx="10"/><rect x="380" y="350" width="200" height="142" rx="10"/><rect x="690" y="350" width="200" height="142" rx="10"/></g>
+<g fill="#7896ac"><rect x="70" y="350" width="200" height="35" rx="10"/><rect x="380" y="350" width="200" height="35" rx="10"/><rect x="690" y="350" width="200" height="35" rx="10"/></g>
+<g fill="#f0ede5" font-size="24" text-anchor="middle"><text x="170" y="439">Player</text><text x="480" y="439">Pipes</text><text x="790" y="439">HUD &amp; state</text></g>
+<text x="70" y="573" fill="#a5c6d9" font-size="18">UNREAL ENGINE 5.6 · BLUEPRINT SOURCE PROJECT</text></g></svg>

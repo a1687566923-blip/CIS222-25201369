@@ -1,17 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="room-index">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Zhang Kwok Ho’s personal portfolio: education, experience, skills and course projects, explored through a small study room.">
+  <meta name="description" content="ZhangKwokHo’s personal portfolio: education, experience, skills and course projects, explored through a small study room.">
   <meta name="color-scheme" content="dark light">
-  <title>Kwok Ho’s room — Personal portfolio</title>
+  <title>ZhangKwokHo’s room — Personal portfolio</title>
   <script>
     // Decide before the browser can restore an old scroll position on refresh.
     (function () {
       var entries = window.performance && window.performance.getEntriesByType ? window.performance.getEntriesByType('navigation') : [];
-      var reload = entries[0] ? entries[0].type === 'reload' : !!(window.performance && window.performance.navigation && window.performance.navigation.type === 1);
-      var startup = window.roomStartup = { fromStart: reload || !window.location.hash, ready: false };
+      var type = entries[0] ? entries[0].type : (window.performance && window.performance.navigation && window.performance.navigation.type === 1 ? 'reload' : window.performance && window.performance.navigation && window.performance.navigation.type === 2 ? 'back_forward' : 'navigate');
+      var reload = type === 'reload';
+      var previousReading = null;
+      var previousParent = null;
+      try { if (type === 'back_forward' && window.history.state && window.history.state.roomReadingPage === 'index.html') { previousReading = window.history.state.roomReading; previousParent = window.history.state.roomReadingParent; } }
+      catch (error) { /* Explicit Back links also carry a URL bookmark. */ }
+      var startup = window.roomStartup = { fromStart: reload || (!window.location.hash && !previousReading), ready: false, resumeToken: reload ? null : previousReading, resumeParentToken: reload ? null : previousParent };
       try {
         window.history.scrollRestoration = 'manual';
         if (startup.fromStart && window.location.hash) {
@@ -20,31 +25,39 @@
       } catch (error) { /* Local-file privacy settings may restrict history. */ }
       if (startup.fromStart) {
         document.documentElement.classList.add('room-booting', 'room-opening');
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        try { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); }
+        catch (error) {
+          try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }
+          catch (legacyError) { window.scrollTo(0, 0); }
+        }
         // If enhancement fails, reveal the ordinary HTML rather than trapping it.
         startup.guardTimer = window.setTimeout(function () {
           if (startup.ready) { return; }
           document.documentElement.classList.remove('room-booting', 'room-opening');
           document.body.classList.remove('intro-running', 'intro-finishing');
-          document.querySelectorAll('[inert]').forEach(function (item) { item.removeAttribute('inert'); });
+          Array.prototype.forEach.call(document.querySelectorAll('[inert]'), function (item) { item.removeAttribute('inert'); });
           var screen = document.getElementById('intro-screen');
           if (screen) { screen.hidden = true; }
         }, 8000);
+      } else if (!reload && (previousReading || /[?&]room-resume=/.test(window.location.href))) {
+        document.documentElement.classList.add('room-returning');
+        startup.guardTimer = window.setTimeout(function () { document.documentElement.classList.remove('room-returning'); }, 8000);
       }
     }());
   </script>
   <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=20261015-dark-nav1">
-  <link rel="stylesheet" href="room-tour.css?v=20261015-dark-nav1">
-  <link rel="stylesheet" href="room-model.css?v=20261015-dark-nav1">
-  <script src="script.js?v=20261015-dark-nav1" defer></script>
-  <script src="room-model.js?v=20261015-dark-nav1" defer></script>
-  <script src="room-tour.js?v=20261015-dark-nav1" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261016-audit1">
+  <link rel="stylesheet" href="room-tour.css?v=20261016-audit1">
+  <link rel="stylesheet" href="room-model.css?v=20261016-audit1">
+  <script src="script.js?v=20261016-audit1" defer></script>
+  <script src="navigation.js?v=20261016-audit1" data-room-page="index.html" data-room-root="" defer></script>
+  <script src="room-model.js?v=20261016-audit1" defer></script>
+  <script src="room-tour.js?v=20261016-audit1" defer></script>
 </head>
 <body class="night room-home">
 <div class="intro-screen" id="intro-screen" data-phase="loading" role="dialog" aria-modal="true" aria-label="Welcome to Kwok Ho’s room" hidden>
   <div class="intro-loading" id="intro-loading" role="progressbar" aria-label="Opening sequence progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="intro-progress"></span></div>
-  <div class="intro-copy"><span class="intro-cube-wrap" aria-hidden="true"><span class="intro-cube"><span class="cube-face cube-front"></span><span class="cube-face cube-back"></span><span class="cube-face cube-left"></span><span class="cube-face cube-right"></span><span class="cube-face cube-top"></span><span class="cube-face cube-bottom"></span></span></span><p class="intro-title">Hello, I’m Kwok Ho.</p></div>
+  <div class="intro-copy"><span class="intro-cube-wrap" aria-hidden="true"><span class="intro-cube"><span class="cube-face cube-front"></span><span class="cube-face cube-back"></span><span class="cube-face cube-left"></span><span class="cube-face cube-right"></span><span class="cube-face cube-top"></span><span class="cube-face cube-bottom"></span></span></span><p class="intro-title">Hello, I’m ZhangKwokHo.</p></div>
   <button class="intro-enter" id="intro-enter" type="button" aria-label="Enter the room — scroll down or click" hidden><span>Scroll to enter</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 9 7 7 7-7"></path></svg></button>
   <button class="intro-skip" id="intro-skip" type="button" hidden>Skip intro ↗</button>
 </div>
@@ -53,11 +66,11 @@
 <header class="site-header scene-header">
   <a class="brand" href="index.html" aria-label="Kwok Ho’s room — home"><span class="brand-mark" aria-hidden="true">kh.</span><span>kwok ho’s room</span></a>
   <nav class="site-nav" id="site-nav" aria-label="Main navigation"><a href="index.html" aria-current="page">Room</a>
-<a href="experience.html">Experience</a>
+<a href="sitemap.html">Directory</a>
 <a href="education.html">Education</a>
 <a href="skills.html">Skills</a>
 <a href="projects.html">Projects</a>
-<a href="sitemap.html">Site map</a></nav>
+<a href="experience.html">Experience</a></nav>
   <button class="theme-toggle" type="button" aria-label="Night mode" aria-pressed="true" title="Switch to day mode" hidden><svg class="theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"></path></svg><span class="theme-switch" aria-hidden="true"><span class="theme-thumb"></span></span><svg class="theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.7 13.1A8.5 8.5 0 0 1 10.9 3.3 8.5 8.5 0 1 0 20.7 13.1Z"></path></svg><span class="theme-label">Night</span></button>
   <button class="menu-toggle" type="button" aria-controls="site-nav" aria-expanded="false" aria-label="Open navigation" hidden>Menu</button>
 </header>
@@ -92,82 +105,90 @@
           <button class="quiet-button" id="replay-intro" type="button" hidden>Replay intro</button>
         </div>
       <p class="room-wordmark" aria-hidden="true">KWOK HO<br>PORTFOLIO</p>
-      <a class="room-scroll-cue" href="#tour-about" aria-label="Scroll to about me"><span aria-hidden="true">⌄</span></a>
-      <a id="tour-next" class="tour-next-control" href="#tour-about" hidden><span id="tour-next-label">Next chapter</span><span aria-hidden="true">↓</span></a>
+      <a class="room-scroll-cue" href="#tour-map" aria-label="Open the room directory"><span aria-hidden="true">⌄</span></a>
+      <a id="tour-next" class="tour-next-control" href="#tour-map" hidden><span id="tour-next-label">Next chapter</span><span aria-hidden="true">↓</span></a>
       <nav class="tour-navigation" aria-label="Room chapters"><a class="tour-stop" href="#tour-home" data-chapter="home" aria-label="The room" title="The room"><span>01</span></a>
-<a class="tour-stop" href="#tour-about" data-chapter="about" aria-label="About me" title="About me"><span>02</span></a>
-<a class="tour-stop" href="#tour-education" data-chapter="education" aria-label="Education" title="Education"><span>03</span></a>
-<a class="tour-stop" href="#tour-skills" data-chapter="skills" aria-label="Skills" title="Skills"><span>04</span></a>
-<a class="tour-stop" href="#tour-projects" data-chapter="projects" aria-label="Projects" title="Projects"><span>05</span></a>
-<a class="tour-stop" href="#tour-experience" data-chapter="experience" aria-label="Experience" title="Experience"><span>06</span></a>
-<a class="tour-stop" href="#tour-map" data-chapter="map" aria-label="Site map" title="Site map"><span>07</span></a></nav>
+<a class="tour-stop" href="#tour-map" data-chapter="map" aria-label="Directory" title="Directory"><span>02</span></a>
+<a class="tour-stop" href="#tour-about" data-chapter="about" aria-label="About me" title="About me"><span>03</span></a>
+<a class="tour-stop" href="#tour-education" data-chapter="education" aria-label="Education" title="Education"><span>04</span></a>
+<a class="tour-stop" href="#tour-skills" data-chapter="skills" aria-label="Skills" title="Skills"><span>05</span></a>
+<a class="tour-stop" href="#tour-projects" data-chapter="projects" aria-label="Projects" title="Projects"><span>06</span></a>
+<a class="tour-stop" href="#tour-experience" data-chapter="experience" aria-label="Experience" title="Experience"><span>07</span></a></nav>
       <div class="tour-progress-track" aria-hidden="true"><span id="tour-progress"></span></div>
     </div>
     <div class="tour-chapters"><section class="tour-chapter" id="tour-home" data-chapter="home" data-name="The room" aria-labelledby="room-title">
   <div class="tour-copy"><p class="eyebrow">A ROOM FOR IDEAS</p><h1 id="room-title">Kwok Ho’s room.</h1>
 <p class="tour-lead">Welcome to my little corner of the web.</p>
 <p class="student-note"><span class="status-dot" aria-hidden="true"></span>HDAI-ICT · Year 2 · Hong Kong</p>
-<a class="tour-text-link" href="#tour-about">Scroll to explore <span aria-hidden="true">↓</span></a></div>
+<a class="tour-text-link" href="#tour-map">Explore the directory <span aria-hidden="true">↓</span></a></div>
 </section>
-<section class="tour-chapter" id="tour-about" data-chapter="about" data-side="left" data-name="About me" aria-labelledby="chapter-title-about">
+<section class="tour-chapter" id="tour-map" data-chapter="map" data-side="left" data-name="Directory" aria-labelledby="chapter-title-map">
+  <div class="tour-copy"><div class="chapter-ribbon" aria-hidden="true"><svg viewBox="0 0 420 280" fill="none"><polygon points="32,105 388,12 388,58 32,151" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,171 388,78 388,124 32,217" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,178 388,270 388,280 32,188" fill="currentColor"></polygon><text x="35" y="163" transform="rotate(14 35 163)" fill="currentColor" font-size="42" font-family="Arial, sans-serif" font-weight="600" letter-spacing="2">DIRECTORY</text></svg></div>
+<p class="eyebrow">01 / THE ROOM DIRECTORY</p><h2 id="chapter-title-map">A quick look<br> around.</h2>
+<p>Start here. Choose a topic to see what is inside, then follow your own route.</p>
+<nav class="tour-directory" aria-label="Choose a room topic">
+  <a href="#tour-about"><strong>About me</strong><span>Meet ZhangKwokHo</span><span aria-hidden="true">↗</span></a>
+  <a href="#tour-education"><strong>Education</strong><span>University &amp; studies</span><span aria-hidden="true">↗</span></a>
+  <a href="#tour-skills"><strong>Skills</strong><span>My growing toolbox</span><span aria-hidden="true">↗</span></a>
+  <a href="#tour-projects"><strong>Projects</strong><span>Web coursework &amp; game projects</span><span aria-hidden="true">↗</span></a>
+  <a href="#tour-experience"><strong>Experience</strong><span>Work &amp; next steps</span><span aria-hidden="true">↗</span></a>
+</nav>
+<a class="tour-text-link" href="sitemap.html">Open the full directory <span aria-hidden="true">↗</span></a>
+<p class="chapter-footer"><span>CHAPTER</span><span>01</span></p>
+<a class="chapter-next" href="#tour-about"><span><small>NEXT CHAPTER</small><strong>About me</strong></span><span class="chapter-next-arrow" aria-hidden="true">↓</span></a></div>
+</section>
+<section class="tour-chapter" id="tour-about" data-chapter="about" data-side="right" data-name="About me" aria-labelledby="chapter-title-about">
   <div class="tour-copy"><div class="chapter-ribbon" aria-hidden="true"><svg viewBox="0 0 420 280" fill="none"><polygon points="32,105 388,12 388,58 32,151" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,171 388,78 388,124 32,217" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,178 388,270 388,280 32,188" fill="currentColor"></polygon><text x="35" y="163" transform="rotate(14 35 163)" fill="currentColor" font-size="42" font-family="Arial, sans-serif" font-weight="600" letter-spacing="2">ABOUT ME</text></svg></div>
-<p class="eyebrow">01 / THE FRAMED PHOTO</p><h2 id="chapter-title-about">Meet the person<br>behind the room.</h2>
-<p>I’m Zhang Kwok Ho, a Year 2 student at Saint Francis University in Hong Kong.</p>
-<p>[Add a few words about your interests, your personality and what you would like to do next.]</p>
-<a class="tour-text-link" href="#about">Read my full introduction <span aria-hidden="true">↗</span></a><p class="chapter-footer"><span>CHAPTER</span><span>01</span></p>
+<p class="eyebrow">02 / THE FRAMED PHOTO</p><h2 id="chapter-title-about">Meet the person<br> behind the room.</h2>
+<p>I’m ZhangKwokHo, a Year 2 student at Saint Francis University in Hong Kong.</p>
+<p>I enjoy learning practical computer technologies, solving technical problems and building projects.</p>
+<a class="tour-text-link" href="#about">Read my full introduction <span aria-hidden="true">↗</span></a><p class="chapter-footer"><span>CHAPTER</span><span>02</span></p>
 <a class="chapter-next" href="#tour-education"><span><small>NEXT CHAPTER</small><strong>Education</strong></span><span class="chapter-next-arrow" aria-hidden="true">↓</span></a></div>
 </section>
-<section class="tour-chapter" id="tour-education" data-chapter="education" data-side="right" data-name="Education" aria-labelledby="chapter-title-education">
+<section class="tour-chapter" id="tour-education" data-chapter="education" data-side="left" data-name="Education" aria-labelledby="chapter-title-education">
   <div class="tour-copy"><div class="chapter-ribbon" aria-hidden="true"><svg viewBox="0 0 420 280" fill="none"><polygon points="32,105 388,12 388,58 32,151" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,171 388,78 388,124 32,217" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,178 388,270 388,280 32,188" fill="currentColor"></polygon><text x="35" y="163" transform="rotate(14 35 163)" fill="currentColor" font-size="42" font-family="Arial, sans-serif" font-weight="600" letter-spacing="2">EDUCATION</text></svg></div>
-<p class="eyebrow">02 / THE BOOKSHELF</p><h2 id="chapter-title-education">Learning, one<br>page at a time.</h2>
+<p class="eyebrow">03 / THE BOOKSHELF</p><h2 id="chapter-title-education">Learning, one<br> page at a time.</h2>
 <p>Higher Diploma in Artificial Intelligence and Information and Communication Technology.</p>
 <p class="small-note">Saint Francis University · Year 2</p>
 <p>[Add the subjects you enjoy most and a question you would like to explore.]</p>
-<a class="tour-text-link" href="education.html">Open my study notebook <span aria-hidden="true">↗</span></a><p class="chapter-footer"><span>CHAPTER</span><span>02</span></p>
+<a class="tour-text-link" href="education.html">Open my study notebook <span aria-hidden="true">↗</span></a><p class="chapter-footer"><span>CHAPTER</span><span>03</span></p>
 <a class="chapter-next" href="#tour-skills"><span><small>NEXT CHAPTER</small><strong>Skills</strong></span><span class="chapter-next-arrow" aria-hidden="true">↓</span></a></div>
 </section>
-<section class="tour-chapter" id="tour-skills" data-chapter="skills" data-side="left" data-name="Skills" aria-labelledby="chapter-title-skills">
+<section class="tour-chapter" id="tour-skills" data-chapter="skills" data-side="right" data-name="Skills" aria-labelledby="chapter-title-skills">
   <div class="tour-copy"><div class="chapter-ribbon" aria-hidden="true"><svg viewBox="0 0 420 280" fill="none"><polygon points="32,105 388,12 388,58 32,151" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,171 388,78 388,124 32,217" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,178 388,270 388,280 32,188" fill="currentColor"></polygon><text x="35" y="163" transform="rotate(14 35 163)" fill="currentColor" font-size="50" font-family="Arial, sans-serif" font-weight="600" letter-spacing="2">SKILLS</text></svg></div>
-<p class="eyebrow">03 / THE CONTROLLER</p><h2 id="chapter-title-skills">A toolbox<br>in progress.</h2>
+<p class="eyebrow">04 / THE CONTROLLER</p><h2 id="chapter-title-skills">A toolbox<br> in progress.</h2>
 <p>A place to show what I can do, and what I am still learning.</p>
 <ul class="tour-tags"><li>HTML</li><li>CSS</li><li>JavaScript</li></ul>
 <p>[Add your strengths and an example of how you have used them.]</p>
-<a class="tour-text-link" href="skills.html">Explore my skills <span aria-hidden="true">↗</span></a><p class="chapter-footer"><span>CHAPTER</span><span>03</span></p>
+<a class="tour-text-link" href="skills.html">Explore my skills <span aria-hidden="true">↗</span></a><p class="chapter-footer"><span>CHAPTER</span><span>04</span></p>
 <a class="chapter-next" href="#tour-projects"><span><small>NEXT CHAPTER</small><strong>Projects</strong></span><span class="chapter-next-arrow" aria-hidden="true">↓</span></a></div>
 </section>
-<section class="tour-chapter" id="tour-projects" data-chapter="projects" data-side="right" data-name="Projects" aria-labelledby="chapter-title-projects">
+<section class="tour-chapter" id="tour-projects" data-chapter="projects" data-side="left" data-name="Projects" aria-labelledby="chapter-title-projects">
   <div class="tour-copy"><div class="chapter-ribbon" aria-hidden="true"><svg viewBox="0 0 420 280" fill="none"><polygon points="32,105 388,12 388,58 32,151" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,171 388,78 388,124 32,217" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,178 388,270 388,280 32,188" fill="currentColor"></polygon><text x="35" y="163" transform="rotate(14 35 163)" fill="currentColor" font-size="50" font-family="Arial, sans-serif" font-weight="600" letter-spacing="2">MY WORK</text></svg></div>
-<p class="eyebrow">04 / THE MONITOR</p><h2 id="chapter-title-projects">What’s on<br>my screen.</h2>
-<p>Small projects, course exercises and the things I learn by making them.</p>
-<ul class="tour-projects"><li><span>01</span> This portfolio <small>In progress</small></li><li><span>02</span> Tutorial 5 <small>Completed</small></li><li><span>03</span> Tutorial 4 <small>Completed</small></li></ul>
-<a class="tour-text-link" href="projects.html">View my work <span aria-hidden="true">↗</span></a><p class="chapter-footer"><span>CHAPTER</span><span>04</span></p>
+<p class="eyebrow">05 / THE MONITOR</p><h2 id="chapter-title-projects">What’s on<br> my screen.</h2>
+<p>My CIS222 web coursework (Year 2 · Semester 1 · 2026) and CIS243 game projects, with individual and group work clearly labelled.</p>
+<ul class="tour-projects"><li><span>02</span> Personal web page <small>HTML &amp; media</small></li><li><span>03</span> Table layout <small>HTML layout</small></li><li><span>04</span> Student registration <small>Forms &amp; CSS</small></li><li><span>05</span> NexGen Tech <small>Website &amp; form</small></li><li><span>GP</span> Endless Runner <small>CIS243 · Group</small></li><li><span>IP</span> Flappy Bird <small>CIS243 · Individual</small></li></ul>
+<a class="tour-text-link" href="projects.html">View my work <span aria-hidden="true">↗</span></a><p class="chapter-footer"><span>CHAPTER</span><span>05</span></p>
 <a class="chapter-next" href="#tour-experience"><span><small>NEXT CHAPTER</small><strong>Experience</strong></span><span class="chapter-next-arrow" aria-hidden="true">↓</span></a></div>
 </section>
-<section class="tour-chapter" id="tour-experience" data-chapter="experience" data-side="left" data-name="Experience" aria-labelledby="chapter-title-experience">
+<section class="tour-chapter" id="tour-experience" data-chapter="experience" data-side="right" data-name="Experience" aria-labelledby="chapter-title-experience">
   <div class="tour-copy"><div class="chapter-ribbon" aria-hidden="true"><svg viewBox="0 0 420 280" fill="none"><polygon points="32,105 388,12 388,58 32,151" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,171 388,78 388,124 32,217" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,178 388,270 388,280 32,188" fill="currentColor"></polygon><text x="35" y="163" transform="rotate(14 35 163)" fill="currentColor" font-size="35" font-family="Arial, sans-serif" font-weight="600" letter-spacing="2">EXPERIENCE</text></svg></div>
-<p class="eyebrow">05 / THE GYM BAG</p><h2 id="chapter-title-experience">The next<br>chapter.</h2>
+<p class="eyebrow">06 / THE GYM BAG</p><h2 id="chapter-title-experience">The next<br> chapter.</h2>
 <p>Work, volunteering and the responsibilities that help me grow outside the classroom.</p>
 <p>[Add your experience here, or describe the first opportunity you are looking for.]</p>
-<a class="tour-text-link" href="experience.html">Read my experience journal <span aria-hidden="true">↗</span></a><p class="chapter-footer"><span>CHAPTER</span><span>05</span></p>
-<a class="chapter-next" href="#tour-map"><span><small>NEXT CHAPTER</small><strong>Site map</strong></span><span class="chapter-next-arrow" aria-hidden="true">↓</span></a></div>
-</section>
-<section class="tour-chapter" id="tour-map" data-chapter="map" data-side="right" data-name="Site map" aria-labelledby="chapter-title-map">
-  <div class="tour-copy"><div class="chapter-ribbon" aria-hidden="true"><svg viewBox="0 0 420 280" fill="none"><polygon points="32,105 388,12 388,58 32,151" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,171 388,78 388,124 32,217" stroke="currentColor" stroke-width="1"></polygon><polygon points="32,178 388,270 388,280 32,188" fill="currentColor"></polygon><text x="35" y="163" transform="rotate(14 35 163)" fill="currentColor" font-size="42" font-family="Arial, sans-serif" font-weight="600" letter-spacing="2">SITE MAP</text></svg></div>
-<p class="eyebrow">06 / THE PAPER MAP</p><h2 id="chapter-title-map">Choose your<br>own route.</h2>
-<p>You can explore the room in any order. There is always a clear path back.</p>
-<a class="tour-text-link" href="sitemap.html">See all six pages <span aria-hidden="true">↗</span></a>
-<a class="tour-text-link secondary-tour-link" href="#tour-home">Return to the room <span aria-hidden="true">↑</span></a><p class="chapter-footer"><span>CHAPTER</span><span>06</span></p>
-<a class="chapter-next" href="#about"><span><small>CONTINUE READING</small><strong>Full introduction</strong></span><span class="chapter-next-arrow" aria-hidden="true">↓</span></a></div>
+<a class="tour-text-link" href="experience.html">Read my experience journal <span aria-hidden="true">↗</span></a><p class="chapter-footer"><span>CHAPTER</span><span>06</span></p>
+<a class="chapter-next" href="#tour-home"><span><small>BACK TO THE ROOM</small><strong>The room</strong></span><span class="chapter-next-arrow" aria-hidden="true">↓</span></a></div>
 </section></div>
   </div>
   <section class="about-section" id="about" aria-labelledby="about-title" data-reveal>
+    <a class="back-room" data-room-back href="#tour-about">← Back</a>
     <div class="about-layout">
       <div class="about-copy">
         <p class="section-label">01 / THE PERSON BEHIND THE ROOM</p>
-        <h2 id="about-title">Hello, I’m<br>Zhang Kwok Ho.</h2>
+        <h2 id="about-title">Hello, I’m<br> ZhangKwokHo.</h2>
         <p>I am a Year 2 HDAI-ICT student at Saint Francis University in Hong Kong. This room brings together my studies, course projects and the next steps in my journey.</p>
         <!-- EDIT: Replace the bracketed text with your personal introduction. -->
-        <p>[Add a short introduction: your interests, strengths and the kind of opportunity you would like to explore.]</p>
+        <p>I enjoy practical computer technologies and building useful websites. My goal is to develop my skills for a future role in artificial intelligence and information technology.</p>
         <div class="about-links"><a class="action-link" href="projects.html">See what I am making ↗</a><a class="action-link" href="education.html">Open my study notebook ↗</a></div>
       </div>
       <div class="about-facts">
@@ -177,21 +198,22 @@
           <div class="fact-row"><dt>University</dt><dd>Saint Francis University</dd></div>
           <div class="fact-row"><dt>Programme</dt><dd>Higher Diploma in Artificial Intelligence and Information and Communication Technology</dd></div>
           <div class="fact-row"><dt>Study year</dt><dd>Year 2</dd></div>
-          <div class="fact-row"><dt>Interests</dt><dd>[Add your interests]</dd></div>
-          <div class="fact-row"><dt>Contact</dt><dd>[Add your public contact email]</dd></div>
+          <div class="fact-row"><dt>Interests</dt><dd>Online gaming, practical computer technologies, web development and problem solving</dd></div>
+          <div class="fact-row"><dt>Contact</dt><dd style="min-width: 0; overflow-wrap: anywhere; word-break: break-word;"><a href="mailto:s25201369@mail.sfu.edu.hk">s25201369@mail.sfu.edu.hk</a></dd></div>
         </dl>
       </div>
     </div>
+    <a class="button button-secondary page-back" data-room-back href="#tour-about">← Back</a>
   </section>
 </main>
 <footer class="site-footer">
-  <div><p class="footer-title">A room for ideas.</p><p class="footer-copy">© 2026 Zhang Kwok Ho · Hong Kong</p></div>
+  <div><p class="footer-title">A room for ideas.</p><p class="footer-copy">© 2026 ZhangKwokHo · Hong Kong</p></div>
   <nav class="footer-nav" aria-label="Footer navigation"><a href="index.html">Room</a>
-<a href="experience.html">Experience</a>
+<a href="sitemap.html">Directory</a>
 <a href="education.html">Education</a>
 <a href="skills.html">Skills</a>
 <a href="projects.html">Projects</a>
-<a href="sitemap.html">Site map</a></nav>
+<a href="experience.html">Experience</a></nav>
 </footer>
 </body>
 </html>
